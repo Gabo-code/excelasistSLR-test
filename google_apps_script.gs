@@ -32,34 +32,76 @@ function doGet(e) {
 
 // Función para crear la carpeta de fotos si no existe
 function getOrCreatePhotoFolder() {
-  const folderName = "Fotos_Asistencia";
-  let folders = DriveApp.getFoldersByName(folderName);
-  
-  if (folders.hasNext()) {
-    return folders.next();
-  } else {
-    return DriveApp.createFolder(folderName);
+  try {
+    const folderName = "Fotos_Asistencia";
+    console.log("Buscando carpeta:", folderName);
+    
+    let folders = DriveApp.getFoldersByName(folderName);
+    
+    if (folders.hasNext()) {
+      const folder = folders.next();
+      console.log("Carpeta existente encontrada. ID:", folder.getId());
+      return folder;
+    } else {
+      console.log("Creando nueva carpeta...");
+      const newFolder = DriveApp.createFolder(folderName);
+      console.log("Nueva carpeta creada. ID:", newFolder.getId());
+      return newFolder;
+    }
+  } catch (error) {
+    console.error("Error al obtener/crear carpeta:", error.toString());
+    console.error("Stack trace:", error.stack);
+    throw error;
   }
 }
 
 // Función para guardar la foto y obtener el enlace
 function savePhoto(base64Data, fileName) {
   try {
-    // Decodificar la imagen base64
-    const photoBlob = Utilities.newBlob(Utilities.base64Decode(base64Data.split(',')[1]), 'image/jpeg', fileName);
+    console.log("Iniciando guardado de foto para:", fileName);
     
-    // Obtener o crear la carpeta
+    if (!base64Data) {
+      throw new Error("No se recibieron datos de imagen (base64Data es null o vacío)");
+    }
+
+    // Validar formato base64
+    const base64Parts = base64Data.split(',');
+    if (base64Parts.length !== 2) {
+      throw new Error("Formato base64 inválido - no contiene la estructura esperada");
+    }
+
+    console.log("Decodificando datos base64...");
+    const decodedData = Utilities.base64Decode(base64Parts[1]);
+    if (!decodedData || decodedData.length === 0) {
+      throw new Error("Error al decodificar datos base64");
+    }
+
+    const photoBlob = Utilities.newBlob(decodedData, 'image/jpeg', fileName);
+    console.log("Blob creado correctamente. Tamaño:", photoBlob.getBytes().length);
+    
+    console.log("Obteniendo carpeta de fotos...");
     const folder = getOrCreatePhotoFolder();
+    if (!folder) {
+      throw new Error("No se pudo obtener o crear la carpeta de fotos");
+    }
+    console.log("Carpeta obtenida:", folder.getName(), "ID:", folder.getId());
     
-    // Guardar el archivo
+    console.log("Guardando archivo...");
     const file = folder.createFile(photoBlob);
+    if (!file) {
+      throw new Error("Error al crear el archivo en Drive");
+    }
+    console.log("Archivo creado con ID:", file.getId());
     
-    // Configurar permisos de visualización
+    console.log("Configurando permisos...");
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     
-    return file.getUrl();
+    const url = file.getUrl();
+    console.log("URL del archivo:", url);
+    return url;
   } catch (error) {
-    console.error("Error al guardar la foto:", error);
+    console.error("Error detallado al guardar la foto:", error.toString());
+    console.error("Stack trace:", error.stack);
     throw error;
   }
 }
