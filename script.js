@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // NUEVA URL: Reemplaza esto con la URL de tu Google Apps Script
     const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzgd3dsxH6LX_RIhRiE5Porrh9IhDllN-NZs90ejXPBHJZwj_oBZU_jHEXCEEh5bhdvsg/exec';
 
+    // --- Inicio: Configuración de Geolocalización ---
+    const TARGET_LAT = -33.564259;
+    const TARGET_LON = -70.680248;
+    const MAX_DISTANCE_METERS = 50;
+    // --- Fin: Configuración de Geolocalización ---
+
     function updateTimestamp() {
         const now = new Date();
         timestampInput.value = now.toLocaleString('es-ES');
@@ -61,80 +67,105 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Inicio: Funciones de Geolocalización y Distancia ---
+    function toRadians(degrees) {
+        return degrees * Math.PI / 180;
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // Radio de la Tierra en metros
+        const phi1 = toRadians(lat1);
+        const phi2 = toRadians(lat2);
+        const deltaPhi = toRadians(lat2 - lat1);
+        const deltaLambda = toRadians(lon2 - lon1);
+
+        const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                  Math.cos(phi1) * Math.cos(phi2) *
+                  Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // Distancia en metros
+    }
+
+    function getCurrentLocation() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Geolocalización no soportada por este navegador.'));
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true });
+        });
+    }
+    // --- Fin: Funciones de Geolocalización y Distancia ---
+
     attendanceForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const selectedDriver = driverSelect.value;
-        const selectedVehicleType = vehicleTypeSelect.value;
-        const submissionTimestamp = timestampInput.value;
-
-        if (!selectedDriver) {
-            messageElement.textContent = 'Por favor, selecciona un conductor.';
-            messageElement.className = 'error';
-            return;
-        }
-
-        if (!selectedVehicleType) {
-            messageElement.textContent = 'Por favor, selecciona un tipo de vehículo.';
-            messageElement.className = 'error';
-            return;
-        }
-
-        messageElement.textContent = `Registrando asistencia para ${selectedDriver} (${selectedVehicleType})...`;
+        
+        messageElement.textContent = 'Verificando ubicación...';
         messageElement.className = '';
-
-        // Lógica para enviar datos a Google Sheets (se implementará después)
-        // Por ahora, solo simulamos un registro exitoso
-        // console.log('Asistencia a registrar:', { // Comentamos la simulación anterior
-        //     driver: selectedDriver,
-        //     timestamp: submissionTimestamp
-        // });
+        // Deshabilitar botón mientras se procesa para evitar envíos múltiples
+        const submitButton = attendanceForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
 
         try {
+            const position = await getCurrentLocation();
+            const userLat = position.coords.latitude;
+            const userLon = position.coords.longitude;
+
+            const distance = calculateDistance(userLat, userLon, TARGET_LAT, TARGET_LON);
+
+            if (distance > MAX_DISTANCE_METERS) {
+                throw new Error(`Ubicación fuera del rango permitido. Distancia: ${distance.toFixed(0)}m.`);
+            }
+
+            messageElement.textContent = `Ubicación verificada (a ${distance.toFixed(0)}m). Registrando asistencia...`;
+            // Si la ubicación es correcta, procede con el registro
+            const selectedDriver = driverSelect.value;
+            const selectedVehicleType = vehicleTypeSelect.value; 
+            const submissionTimestamp = timestampInput.value;
+    
+            if (!selectedDriver) {
+                throw new Error('Por favor, selecciona un conductor.');
+            }
+    
+            if (!selectedVehicleType) { 
+                throw new Error('Por favor, selecciona un tipo de vehículo.');
+            }
+            
             // Preparamos los datos como URLSearchParams
             const formData = new URLSearchParams(); 
             formData.append('driver', selectedDriver);
-            formData.append('vehicleType', selectedVehicleType);
+            formData.append('vehicleType', selectedVehicleType); 
             formData.append('timestamp', submissionTimestamp);
-
+    
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
-                // mode: 'cors', // Ya no es estrictamente necesario para simple requests, pero no daña
-                // cache: 'no-cache',
                 headers: {
-                    // Ya no 'Content-Type': 'application/json',
                     'Content-Type': 'application/x-www-form-urlencoded', 
                 },
-                // redirect: 'follow', // Puede seguir siendo útil
-                body: formData.toString() // Enviamos los datos como una cadena de consulta
+                body: formData.toString() 
             });
-
-            const result = await response.json(); // El Apps Script seguirá devolviendo JSON
-
+    
+            const result = await response.json(); 
+    
             if (response.ok && result.status === 'success') {
                 messageElement.textContent = result.message; 
                 messageElement.className = 'success';
                 attendanceForm.reset();
                 updateTimestamp();
                 driverSelect.value = '';
-                vehicleTypeSelect.value = '';
+                vehicleTypeSelect.value = ''; 
             } else {
-                throw new Error(result.message || 'Error al registrar la asistencia.');
+                throw new Error(result.message || 'Error al registrar la asistencia desde el servidor.');
             }
 
         } catch (error) {
-            console.error('Error al registrar asistencia:', error);
-            messageElement.textContent = `Error al registrar: ${error.message}`;
+            console.error('Error en el proceso de asistencia:', error);
+            messageElement.textContent = `Error: ${error.message}`;
             messageElement.className = 'error';
+        } finally {
+            submitButton.disabled = false; // Volver a habilitar el botón
         }
-
-        // setTimeout(() => { // Comentamos la simulación anterior
-        //     messageElement.textContent = `Asistencia registrada para ${selectedDriver} a las ${submissionTimestamp}.`;
-        //     messageElement.className = 'success';
-        //     attendanceForm.reset(); // Limpia el formulario
-        //     updateTimestamp(); // Actualiza el timestamp para el próximo registro
-        //     // Vuelve a poner la opción por defecto en el select
-        //     driverSelect.value = ''; 
-        // }, 1000);
     });
 
     // Cargar conductores y establecer el timestamp inicial
