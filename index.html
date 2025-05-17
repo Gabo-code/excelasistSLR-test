@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Asistencia de Conductores</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Registro de Asistencia</h1>
+        <form id="attendanceForm">
+            <div class="form-group">
+                <label for="driverSelect">Selecciona Conductor:</label>
+                <select id="driverSelect" name="driver" required>
+                    <option value="">Cargando conductores...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="vehicleTypeSelect">Tipo de Vehículo:</label>
+                <select id="vehicleTypeSelect" name="vehicleType" required>
+                    <option value="">-- Selecciona tipo --</option>
+                    <option value="Auto">Auto</option>
+                    <option value="Moto">Moto</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="timestamp">Fecha y Hora:</label>
+                <input type="text" id="timestamp" name="timestamp" readonly>
+            </div>
+            <button type="submit">Registrar Asistencia</button>
+        </form>
+        <p id="message"></p>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
