@@ -37,7 +37,7 @@ function doPost(e) {
     const sheetName = "AsistenciasRegistradas";
     let sheet = ss.getSheetByName(sheetName);
 
-    const expectedHeaders = ["Conductor", "Fecha y Hora de Registro", "Vehículo"];
+    const expectedHeaders = ["Nombre", "Fecha Hora Ingreso", "Vehículo"];
     let columnMap = {}; 
 
     if (!sheet) {
@@ -78,11 +78,11 @@ function doPost(e) {
 
     const nextRow = sheet.getLastRow() + 1;
 
-    if (columnMap["Conductor"]) {
-      sheet.getRange(nextRow, columnMap["Conductor"]).setValue(driver);
+    if (columnMap["Nombre"]) {
+      sheet.getRange(nextRow, columnMap["Nombre"]).setValue(driver);
     }
-    if (columnMap["Fecha y Hora de Registro"]) {
-      sheet.getRange(nextRow, columnMap["Fecha y Hora de Registro"]).setValue(timestamp);
+    if (columnMap["Fecha Hora Ingreso"]) {
+      sheet.getRange(nextRow, columnMap["Fecha Hora Ingreso"]).setValue(timestamp);
     }
     if (columnMap["Vehículo"]) {
       sheet.getRange(nextRow, columnMap["Vehículo"]).setValue(vehicleType);
