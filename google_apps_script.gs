@@ -109,6 +109,56 @@ function savePhoto(base64Data, fileName) {
 // Función doPost actualizada para manejar fotos
 function doPost(e) {
   try {
+    console.log("Iniciando doPost");
+    
+    // Validar parámetros recibidos
+    if (!e || !e.parameter) {
+      throw new Error("No se recibieron parámetros en la solicitud");
+    }
+
+    const driver = e.parameter.driver;
+    const timestamp = e.parameter.timestamp;
+    const vehicleType = e.parameter.vehicleType;
+    const photoData = e.parameter.photo;
+
+    // Log de datos recibidos (excepto la foto por su tamaño)
+    console.log("Datos recibidos:", {
+      driver: driver,
+      timestamp: timestamp,
+      vehicleType: vehicleType,
+      photoReceived: photoData ? "Sí" : "No",
+      photoLength: photoData ? photoData.length : 0
+    });
+
+    if (!driver || !timestamp || !vehicleType || !photoData) {
+      const missingFields = [];
+      if (!driver) missingFields.push("conductor");
+      if (!timestamp) missingFields.push("timestamp");
+      if (!vehicleType) missingFields.push("tipo de vehículo");
+      if (!photoData) missingFields.push("foto");
+      
+      const errorMsg = "Faltan datos requeridos: " + missingFields.join(", ");
+      console.error(errorMsg);
+      return ContentService
+            .createTextOutput(JSON.stringify({ 
+              status: "error", 
+              message: errorMsg
+            }))
+            .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Validar formato de la foto
+    if (!photoData.startsWith('data:image')) {
+      console.error("Formato de foto inválido. Datos recibidos no comienzan con 'data:image'");
+      return ContentService
+            .createTextOutput(JSON.stringify({ 
+              status: "error", 
+              message: "Formato de foto inválido" 
+            }))
+            .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    console.log("Preparando para guardar la foto");
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheetName = "AsistenciasRegistradas";
     let sheet = ss.getSheetByName(sheetName);
@@ -142,23 +192,23 @@ function doPost(e) {
       });
     }
 
-    const driver = e.parameter.driver;
-    const timestamp = e.parameter.timestamp;
-    const vehicleType = e.parameter.vehicleType;
-    const photoData = e.parameter.photo;
-
-    if (!driver || !timestamp || !vehicleType || !photoData) {
+    // Guardar la foto y obtener el enlace
+    const fileName = `${driver}_${timestamp.replace(/[/:]/g, '-')}.jpg`;
+    console.log("Intentando guardar foto con nombre:", fileName);
+    
+    let photoUrl;
+    try {
+      photoUrl = savePhoto(photoData, fileName);
+      console.log("Foto guardada exitosamente. URL:", photoUrl);
+    } catch (photoError) {
+      console.error("Error al guardar la foto:", photoError);
       return ContentService
             .createTextOutput(JSON.stringify({ 
               status: "error", 
-              message: "Faltan datos requeridos (conductor, timestamp, tipo de vehículo o foto)." 
+              message: "Error al guardar la foto: " + photoError.toString()
             }))
             .setMimeType(ContentService.MimeType.JSON);
     }
-
-    // Guardar la foto y obtener el enlace
-    const fileName = `${driver}_${timestamp.replace(/[/:]/g, '-')}.jpg`;
-    const photoUrl = savePhoto(photoData, fileName);
 
     const nextRow = sheet.getLastRow() + 1;
 
@@ -189,8 +239,27 @@ function doPost(e) {
     return ContentService
           .createTextOutput(JSON.stringify({ 
             status: "error", 
-            message: "Error interno del servidor al procesar la solicitud." 
+            message: "Error interno del servidor: " + error.toString()
           }))
           .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Función de prueba para verificar el guardado de fotos
+function testSavePhoto() {
+  try {
+    // Crear una imagen de prueba pequeña en base64
+    const testBase64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=";
+    
+    console.log("Iniciando prueba de guardado de foto");
+    const testFileName = "test_photo_" + new Date().getTime() + ".jpg";
+    
+    const photoUrl = savePhoto(testBase64, testFileName);
+    console.log("Prueba exitosa! URL de la foto:", photoUrl);
+    
+    return "Prueba completada. URL: " + photoUrl;
+  } catch (error) {
+    console.error("Error en la prueba:", error.toString());
+    return "Error en la prueba: " + error.toString();
   }
 } 
