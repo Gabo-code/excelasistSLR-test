@@ -113,10 +113,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateUserLocation(position) {
         const { latitude, longitude } = position.coords;
 
+        // Crear un icono personalizado rojo
+        const redIcon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="background-color: #e53935; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
+
         if (userMarker) {
             userMarker.setLatLng([latitude, longitude]);
         } else {
             userMarker = L.marker([latitude, longitude], {
+                icon: redIcon,
                 title: 'Tu ubicación'
             }).addTo(map);
         }
