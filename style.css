@@ -70,4 +70,13 @@ button[type="submit"]:hover {
 
 .error {
     color: red;
+}
+
+/* Estilos para el mapa Leaflet */
+#map {
+    height: 300px; /* Puedes ajustar esta altura */
+    width: 100%;
+    margin-bottom: 20px; /* Espacio antes del formulario */
+    border: 1px solid #ccc;
+    border-radius: 4px;
 } 

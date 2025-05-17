@@ -16,6 +16,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAX_DISTANCE_METERS = 50;
     // --- Fin: Configuración de Geolocalización ---
 
+    // --- Inicio: Inicialización del Mapa Leaflet ---
+    let map = null; // Variable para mantener la instancia del mapa
+    let userMarker = null; // Variable para el marcador del usuario
+
+    function initMap() {
+        map = L.map('map').setView([TARGET_LAT, TARGET_LON], 16); // Centra el mapa y establece el zoom
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Marcador para la ubicación objetivo
+        L.marker([TARGET_LAT, TARGET_LON]).addTo(map)
+            .bindPopup('Ubicación de Registro Permitida')
+            .openPopup();
+
+        // Círculo para el radio permitido
+        L.circle([TARGET_LAT, TARGET_LON], {
+            color: 'green',
+            fillColor: '#0f0',
+            fillOpacity: 0.2,
+            radius: MAX_DISTANCE_METERS
+        }).addTo(map);
+    }
+    // --- Fin: Inicialización del Mapa Leaflet ---
+
     function updateTimestamp() {
         const now = new Date();
         timestampInput.value = now.toLocaleString('es-ES');
@@ -103,14 +129,24 @@ document.addEventListener('DOMContentLoaded', () => {
         
         messageElement.textContent = 'Verificando ubicación...';
         messageElement.className = '';
-        // Deshabilitar botón mientras se procesa para evitar envíos múltiples
         const submitButton = attendanceForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;
+
+        // Remover marcador de usuario anterior si existe
+        if (userMarker) {
+            map.removeLayer(userMarker);
+            userMarker = null;
+        }
 
         try {
             const position = await getCurrentLocation();
             const userLat = position.coords.latitude;
             const userLon = position.coords.longitude;
+
+            // Añadir marcador para la ubicación actual del usuario
+            userMarker = L.marker([userLat, userLon], {draggable: false}).addTo(map)
+                .bindPopup('Tu ubicación actual').openPopup();
+            map.setView([userLat, userLon], map.getZoom()); // Opcional: Centrar mapa en el usuario
 
             const distance = calculateDistance(userLat, userLon, TARGET_LAT, TARGET_LON);
 
@@ -164,13 +200,13 @@ document.addEventListener('DOMContentLoaded', () => {
             messageElement.textContent = `Error: ${error.message}`;
             messageElement.className = 'error';
         } finally {
-            submitButton.disabled = false; // Volver a habilitar el botón
+            submitButton.disabled = false; 
         }
     });
 
     // Cargar conductores y establecer el timestamp inicial
     fetchDrivers();
     updateTimestamp();
-    // Actualizar el timestamp cada segundo
     setInterval(updateTimestamp, 1000);
+    initMap(); // Inicializar el mapa cuando el DOM esté listo
 }); 
