@@ -22,6 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let targetMarker = null;
     let radiusCircle = null;
 
+    // Variables de la cámara
+    let stream = null;
+    let photoTaken = false;
+    const cameraPreview = document.getElementById('cameraPreview');
+    const photoCanvas = document.getElementById('photoCanvas');
+    const photoPreview = document.getElementById('photoPreview');
+    const startCameraButton = document.getElementById('startCamera');
+    const takePhotoButton = document.getElementById('takePhoto');
+    const retakePhotoButton = document.getElementById('retakePhoto');
+    const cameraStatus = document.getElementById('cameraStatus');
+
     // Función para inicializar el mapa
     function initializeMap() {
         if (map) {
@@ -182,11 +193,71 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Función para iniciar la cámara
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'user',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            });
+            cameraPreview.srcObject = stream;
+            startCameraButton.style.display = 'none';
+            takePhotoButton.disabled = false;
+            cameraPreview.style.display = 'block';
+            photoPreview.style.display = 'none';
+            cameraStatus.textContent = 'Cámara activada';
+        } catch (error) {
+            console.error('Error al acceder a la cámara:', error);
+            cameraStatus.textContent = 'Error al acceder a la cámara. Por favor, permite el acceso.';
+        }
+    }
+
+    // Función para tomar la foto
+    function takePhoto() {
+        const context = photoCanvas.getContext('2d');
+        photoCanvas.width = cameraPreview.videoWidth;
+        photoCanvas.height = cameraPreview.videoHeight;
+        context.drawImage(cameraPreview, 0, 0, photoCanvas.width, photoCanvas.height);
+        
+        photoPreview.src = photoCanvas.toDataURL('image/jpeg');
+        photoPreview.style.display = 'block';
+        cameraPreview.style.display = 'none';
+        takePhotoButton.style.display = 'none';
+        retakePhotoButton.style.display = 'inline-block';
+        
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        
+        photoTaken = true;
+        cameraStatus.textContent = 'Foto capturada';
+    }
+
+    // Función para volver a tomar la foto
+    function retakePhoto() {
+        photoTaken = false;
+        photoPreview.style.display = 'none';
+        retakePhotoButton.style.display = 'none';
+        startCameraButton.style.display = 'inline-block';
+        cameraStatus.textContent = '';
+    }
+
     // Event Listeners
     toggleMapButton.addEventListener('click', toggleMap);
 
     attendanceForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+
+        if (!photoTaken) {
+            messageElement.textContent = 'Por favor, toma una foto antes de registrar la asistencia';
+            messageElement.className = 'error';
+            return;
+        }
+
         messageElement.textContent = 'Verificando ubicación...';
         messageElement.className = '';
 
@@ -215,11 +286,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateUserLocation(position);
             }
 
-            // Preparar datos del formulario
+            // Preparar datos del formulario incluyendo la foto
             const formData = new URLSearchParams();
             formData.append('driver', driverSelect.value);
             formData.append('vehicleType', vehicleTypeSelect.value);
             formData.append('timestamp', timestampInput.value);
+            formData.append('photo', photoPreview.src);
+
+            messageElement.textContent = 'Subiendo foto y registrando asistencia...';
 
             // Enviar datos
             const response = await fetch(googleAppScriptUrl, {
@@ -237,6 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageElement.className = 'success';
                 attendanceForm.reset();
                 updateTimestamp();
+                retakePhoto(); // Resetear la cámara
             } else {
                 throw new Error(result.message || 'Error al registrar la asistencia');
             }
@@ -246,6 +321,11 @@ document.addEventListener('DOMContentLoaded', () => {
             messageElement.className = 'error';
         }
     });
+
+    // Event listeners para la cámara
+    startCameraButton.addEventListener('click', startCamera);
+    takePhotoButton.addEventListener('click', takePhoto);
+    retakePhotoButton.addEventListener('click', retakePhoto);
 
     // Inicialización
     updateTimestamp();

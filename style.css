@@ -120,6 +120,72 @@ button[type="submit"]:hover {
     background-color: #3f51b5;
 }
 
+/* Estilos para la sección de cámara */
+.camera-section {
+    margin-bottom: 25px;
+}
+
+.camera-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    margin-bottom: 10px;
+}
+
+#cameraPreview {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    background-color: #000;
+    border-radius: 8px;
+}
+
+#photoPreview {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.camera-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.camera-button {
+    padding: 10px 20px;
+    background-color: #5c6bc0;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.camera-button:hover {
+    background-color: #3f51b5;
+}
+
+.camera-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.camera-status {
+    text-align: center;
+    margin-top: 8px;
+    color: #666;
+    font-size: 14px;
+}
+
 /* Media queries */
 @media (max-width: 480px) {
     .container {
@@ -140,6 +206,23 @@ button[type="submit"]:hover {
 
     h1 {
         font-size: 1.5em;
+    }
+
+    .camera-container {
+        height: 250px;
+    }
+
+    #cameraPreview,
+    #photoPreview {
+        height: 250px;
+    }
+
+    .camera-buttons {
+        flex-direction: column;
+    }
+
+    .camera-button {
+        width: 100%;
     }
 }
 

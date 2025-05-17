@@ -38,6 +38,23 @@
                 <label for="timestamp">Fecha y Hora:</label>
                 <input type="text" id="timestamp" name="timestamp" readonly>
             </div>
+
+            <!-- Nuevo: Sección de captura de selfie -->
+            <div class="form-group camera-section">
+                <label>Selfie de Verificación:</label>
+                <div class="camera-container">
+                    <video id="cameraPreview" autoplay playsinline></video>
+                    <canvas id="photoCanvas" style="display: none;"></canvas>
+                    <img id="photoPreview" style="display: none;" alt="Selfie Preview">
+                </div>
+                <div class="camera-buttons">
+                    <button type="button" id="startCamera" class="camera-button">Iniciar Cámara</button>
+                    <button type="button" id="takePhoto" class="camera-button" disabled>Tomar Foto</button>
+                    <button type="button" id="retakePhoto" class="camera-button" style="display: none;">Nueva Foto</button>
+                </div>
+                <p id="cameraStatus" class="camera-status"></p>
+            </div>
+
             <button type="submit" class="submit-button">Registrar Asistencia</button>
         </form>
         <p id="message"></p>
