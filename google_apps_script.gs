@@ -1,30 +1,53 @@
 // Función para obtener la lista de asistencias
 function getAttendances() {
+  console.log("Iniciando getAttendances");
   const sheetName = "AsistenciasRegistradas";
   
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
+    console.log("Spreadsheet obtenida");
+    
     const sheet = ss.getSheetByName(sheetName);
+    console.log("Buscando hoja:", sheetName);
 
     if (!sheet) {
+      console.error("Hoja no encontrada:", sheetName);
       return ContentService
             .createTextOutput(JSON.stringify({ error: "Hoja \'" + sheetName + "\' no encontrada." }))
             .setMimeType(ContentService.MimeType.JSON);
     }
 
     // Obtener los datos de la hoja
+    console.log("Obteniendo datos de la hoja");
     const data = sheet.getDataRange().getValues();
+    console.log("Datos obtenidos, filas totales:", data.length);
+    
+    if (data.length <= 1) {
+      console.log("No hay registros en la hoja (solo encabezados o vacía)");
+      return ContentService
+            .createTextOutput(JSON.stringify({ attendances: [] }))
+            .setMimeType(ContentService.MimeType.JSON);
+    }
+
     const headers = data[0];
+    console.log("Encabezados encontrados:", headers);
+
     const attendances = data.slice(1).map(row => {
       const record = {};
       headers.forEach((header, index) => {
-        record[header.toLowerCase().replace(/\s+/g, '')] = row[index];
+        const key = header.toLowerCase().replace(/\s+/g, '');
+        record[key] = row[index];
       });
       return record;
     });
 
+    console.log("Registros procesados:", attendances.length);
+    
+    const response = { attendances: attendances };
+    console.log("Enviando respuesta con datos");
+    
     return ContentService
-          .createTextOutput(JSON.stringify({ attendances: attendances }))
+          .createTextOutput(JSON.stringify(response))
           .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
@@ -37,10 +60,25 @@ function getAttendances() {
 
 // Modificar doGet para manejar diferentes acciones
 function doGet(e) {
-  if (e.parameter.action === 'getAttendances') {
-    return getAttendances();
+  console.log("Iniciando doGet con parámetros:", e.parameter);
+  
+  try {
+    if (e.parameter.action === 'getAttendances') {
+      console.log("Acción solicitada: getAttendances");
+      return getAttendances();
+    }
+    
+    console.log("Acción por defecto: getDrivers");
+    return getDrivers();
+    
+  } catch (error) {
+    console.error("Error en doGet:", error.toString(), "Stack:", error.stack);
+    return ContentService
+          .createTextOutput(JSON.stringify({ 
+            error: "Error procesando la solicitud: " + error.toString() 
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
   }
-  return getDrivers(); // Función original para obtener conductores
 }
 
 function getDrivers() {
@@ -288,22 +326,3 @@ function doPost(e) {
           .setMimeType(ContentService.MimeType.JSON);
   }
 }
-
-// Función de prueba para verificar el guardado de fotos
-function testSavePhoto() {
-  try {
-    // Crear una imagen de prueba pequeña en base64
-    const testBase64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=";
-    
-    console.log("Iniciando prueba de guardado de foto");
-    const testFileName = "test_photo_" + new Date().getTime() + ".jpg";
-    
-    const photoUrl = savePhoto(testBase64, testFileName);
-    console.log("Prueba exitosa! URL de la foto:", photoUrl);
-    
-    return "Prueba completada. URL: " + photoUrl;
-  } catch (error) {
-    console.error("Error en la prueba:", error.toString());
-    return "Error en la prueba: " + error.toString();
-  }
-} 
