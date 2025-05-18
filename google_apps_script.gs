@@ -32,14 +32,31 @@ function getAttendances() {
     const headers = data[0];
     console.log("Encabezados encontrados:", headers);
 
-    const attendances = data.slice(1).map(row => {
-      const record = {};
-      headers.forEach((header, index) => {
-        const key = header.toLowerCase().replace(/\s+/g, '');
-        record[key] = row[index];
-      });
-      return record;
+    // Encontrar los índices de las columnas
+    const vehiculoIndex = headers.findIndex(header => header === "Vehículo");
+    const nombreIndex = headers.findIndex(header => header === "Nombre");
+    const ingresoIndex = headers.findIndex(header => header === "Fecha Hora Ingreso");
+    const salidaIndex = headers.findIndex(header => header === "Fecha Hora Salida");
+
+    console.log("Índices de columnas:", {
+      vehiculo: vehiculoIndex,
+      nombre: nombreIndex,
+      ingreso: ingresoIndex,
+      salida: salidaIndex
     });
+
+    if (vehiculoIndex === -1 || nombreIndex === -1 || ingresoIndex === -1) {
+      throw new Error("No se encontraron todas las columnas requeridas");
+    }
+
+    const attendances = data.slice(1).map(row => {
+      return {
+        vehicleType: row[vehiculoIndex] || '',
+        driver: row[nombreIndex] || '',
+        timestamp: row[ingresoIndex] || '',
+        exitTime: salidaIndex !== -1 ? row[salidaIndex] || '' : ''
+      };
+    }).filter(record => record.driver && record.timestamp);
 
     console.log("Registros procesados:", attendances.length);
     

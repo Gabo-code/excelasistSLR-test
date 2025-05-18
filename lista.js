@@ -122,17 +122,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
                 <tr>
                     <td>${record.driver || 'N/A'}</td>
-                    <td>${record.timestamp ? new Date(record.timestamp).toLocaleString('es-ES') : 'N/A'}</td>
+                    <td>${formatDateTime(record.timestamp)}</td>
                     <td>${record.vehicleType || 'N/A'}</td>
-                    <td>
-                        ${record.photoUrl ? 
-                            `<img src="${record.photoUrl}" class="photo-preview" onclick="showPhotoModal('${record.photoUrl}')" alt="Foto de ${record.driver}">` :
-                            'No disponible'}
-                    </td>
+                    <td>${record.exitTime ? formatDateTime(record.exitTime) : 'En curso'}</td>
                 </tr>
             `;
         }).join('');
         console.log('Tabla actualizada');
+    }
+
+    // Función auxiliar para formatear fechas
+    function formatDateTime(dateStr) {
+        if (!dateStr) return 'N/A';
+        try {
+            const date = new Date(dateStr);
+            return date.toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        } catch (e) {
+            console.error('Error al formatear fecha:', e);
+            return dateStr; // Devolver el string original si hay error
+        }
     }
 
     // Función para mostrar la foto en modal
