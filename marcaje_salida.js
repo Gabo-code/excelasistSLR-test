@@ -17,8 +17,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Función para cargar sectores
     async function loadSectors() {
         try {
-            const response = await fetch(`${googleAppScriptUrl}?action=getSectors`);
-            if (!response.ok) throw new Error('Error en la respuesta del servidor');
+            const response = await fetch(`${googleAppScriptUrl}?action=getSectors`, {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                redirect: 'follow'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             
             const data = await response.json();
             if (data.error) throw new Error(data.error);
@@ -32,6 +42,42 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) {
             console.error('Error al cargar sectores:', error);
+            alert('Error al cargar sectores. Por favor, recargue la página.');
+        }
+    }
+
+    // Función para hacer peticiones al servidor
+    async function makeRequest(url, method = 'GET', data = null) {
+        const options = {
+            method: method,
+            mode: 'cors',
+            redirect: 'follow',
+            headers: {
+                'Accept': 'application/json'
+            }
+        };
+
+        if (method === 'POST' && data) {
+            options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            options.body = data;
+        }
+
+        try {
+            const response = await fetch(url, options);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error en la petición:', error);
+            throw new Error(`Error de conexión: ${error.message}. Por favor, inténtelo de nuevo.`);
         }
     }
 
@@ -120,23 +166,17 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('sector', sector);
             formData.append('ssl', ssl);
 
-            const response = await fetch(googleAppScriptUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: formData
-            });
-
-            const result = await response.json();
+            const result = await makeRequest(googleAppScriptUrl, 'POST', formData);
 
             if (result.status === 'success') {
-                button.closest('tr').remove();
+                // Esperar un momento antes de cerrar el modal y actualizar
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 exitModal.style.display = 'none';
+                button.closest('tr').remove();
                 // Actualizar datos
                 fetchAttendanceData();
             } else {
-                throw new Error(result.message);
+                throw new Error(result.message || 'Error desconocido');
             }
         } catch (error) {
             console.error('Error al marcar salida:', error);
@@ -164,11 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Función para cargar los datos de asistencia
     async function fetchAttendanceData() {
         try {
-            const response = await fetch(`${googleAppScriptUrl}?action=getAttendances`);
-            if (!response.ok) throw new Error('Error en la respuesta del servidor');
-            
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
+            const data = await makeRequest(`${googleAppScriptUrl}?action=getAttendances`);
 
             // Filtrar solo registros de hoy sin hora de salida
             const today = new Date().toLocaleDateString('es-ES');
