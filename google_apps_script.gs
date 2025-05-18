@@ -86,6 +86,12 @@ function doGet(e) {
     } else if (e.parameter.action === 'getSectors') {
       console.log("Acción solicitada: getSectors");
       return getSectors();
+    } else if (e.parameter.action === 'getLocationParams') {
+      console.log("Acción solicitada: getLocationParams");
+      const params = getLocationParams();
+      return ContentService
+            .createTextOutput(JSON.stringify(params))
+            .setMimeType(ContentService.MimeType.JSON);
     }
     
     return getDrivers();
@@ -242,6 +248,42 @@ function getSectors() {
             error: "Error al obtener sectores: " + error.toString()
           }))
           .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Función para obtener los parámetros de ubicación
+function getLocationParams() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Parametros");
+    
+    if (!sheet) {
+      throw new Error("Hoja 'Parametros' no encontrada");
+    }
+
+    // Obtener encabezados
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    
+    // Encontrar índices de las columnas
+    const latitudIndex = headers.findIndex(header => header === "latitud");
+    const longitudIndex = headers.findIndex(header => header === "longitud");
+    const radioIndex = headers.findIndex(header => header === "radio");
+
+    if (latitudIndex === -1 || longitudIndex === -1 || radioIndex === -1) {
+      throw new Error("No se encontraron todas las columnas necesarias (latitud, longitud, radio)");
+    }
+
+    // Obtener los valores (primera fila después del encabezado)
+    const values = sheet.getRange(2, 1, 1, sheet.getLastColumn()).getValues()[0];
+    
+    return {
+      latitud: values[latitudIndex],
+      longitud: values[longitudIndex],
+      radio: values[radioIndex]
+    };
+  } catch (error) {
+    console.error("Error al obtener parámetros de ubicación:", error);
+    throw error;
   }
 }
 

@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Configuración de la ubicación objetivo
-    const TARGET_LAT = -33.564259;
-    const TARGET_LON = -70.680248;
-    const MAX_DISTANCE_METERS = 50;
+    // Variables para los parámetros de ubicación
+    let TARGET_LAT;
+    let TARGET_LON;
+    let MAX_DISTANCE_METERS;
 
     // Referencias a elementos del DOM
     const mapElement = document.getElementById('map');
@@ -33,8 +33,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const retakePhotoButton = document.getElementById('retakePhoto');
     const cameraStatus = document.getElementById('cameraStatus');
 
+    // Función para cargar los parámetros de ubicación
+    async function loadLocationParams() {
+        try {
+            const response = await fetch(`${googleAppScriptUrl}?action=getLocationParams`);
+            if (!response.ok) throw new Error('Error en la respuesta del servidor');
+            
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+            TARGET_LAT = data.latitud;
+            TARGET_LON = data.longitud;
+            MAX_DISTANCE_METERS = data.radio;
+
+            console.log('Parámetros de ubicación cargados:', { TARGET_LAT, TARGET_LON, MAX_DISTANCE_METERS });
+            
+            // Inicializar el mapa después de cargar los parámetros
+            if (mapElement.classList.contains('visible')) {
+                initializeMap();
+            }
+        } catch (error) {
+            console.error('Error al cargar parámetros de ubicación:', error);
+            messageElement.textContent = 'Error al cargar parámetros de ubicación';
+            messageElement.className = 'error';
+        }
+    }
+
     // Función para inicializar el mapa
     function initializeMap() {
+        if (!TARGET_LAT || !TARGET_LON || !MAX_DISTANCE_METERS) {
+            console.error('Parámetros de ubicación no cargados');
+            return;
+        }
+
         if (map) {
             setTimeout(() => {
                 map.invalidateSize();
@@ -338,8 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     takePhotoButton.addEventListener('click', takePhoto);
     retakePhotoButton.addEventListener('click', retakePhoto);
 
-    // Inicialización
-    updateTimestamp();
-    setInterval(updateTimestamp, 1000);
+    // Cargar datos iniciales
+    loadLocationParams();
     fetchDrivers();
 }); 
