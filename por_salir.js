@@ -9,21 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Variables para almacenar datos
     let attendanceData = [];
 
-    // Función para calcular tiempo de espera
-    function calculateWaitingTime(timestamp) {
-        const start = new Date(timestamp);
-        const now = new Date();
-        const diff = now - start;
-        
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        
-        if (hours > 0) {
-            return `${hours}h ${minutes}m`;
-        }
-        return `${minutes}m`;
-    }
-
     // Función para cargar los datos de asistencia
     async function fetchAttendanceData() {
         try {
@@ -64,9 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="driver-info">
                     <div class="driver-name">${record.driver}</div>
                     <div class="driver-details">
-                        ${record.vehicleType} • Ingreso: ${new Date(record.timestamp).toLocaleString('es-ES')}
-                        <br>
-                        <span class="waiting-time">Tiempo de espera: ${calculateWaitingTime(record.timestamp)}</span>
+                        ${record.vehicleType}
                     </div>
                 </div>
             </li>
@@ -75,9 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event listener para el filtro
     vehicleFilter.addEventListener('change', filterAndDisplayData);
-
-    // Actualizar datos cada minuto para mantener el tiempo de espera actualizado
-    setInterval(filterAndDisplayData, 60000);
 
     // Cargar datos iniciales
     fetchAttendanceData();

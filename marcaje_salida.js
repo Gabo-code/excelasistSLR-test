@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             filterAndDisplayData();
         } catch (error) {
             console.error('Error al cargar datos:', error);
-            exitList.innerHTML = `<tr><td colspan="5">Error al cargar los datos: ${error.message}</td></tr>`;
+            exitList.innerHTML = `<tr><td colspan="3">Error al cargar los datos: ${error.message}</td></tr>`;
         }
     }
 
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
         if (!filteredData.length) {
-            exitList.innerHTML = '<tr><td colspan="5">No hay conductores pendientes por marcar salida</td></tr>';
+            exitList.innerHTML = '<tr><td colspan="3">No hay conductores pendientes por marcar salida</td></tr>';
             return;
         }
 
@@ -275,8 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <tr>
                 <td>${record.driver}</td>
                 <td>${record.vehicleType}</td>
-                <td>${timeString}</td>
-                <td class="waiting-time">${calculateWaitingTime(record.timestamp)}</td>
                 <td>
                     <button 
                         class="mark-exit-button"
