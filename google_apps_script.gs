@@ -1,5 +1,49 @@
-// Función doGet para obtener la lista de conductores
+// Función para obtener la lista de asistencias
+function getAttendances() {
+  const sheetName = "AsistenciasRegistradas";
+  
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+
+    if (!sheet) {
+      return ContentService
+            .createTextOutput(JSON.stringify({ error: "Hoja \'" + sheetName + "\' no encontrada." }))
+            .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Obtener los datos de la hoja
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const attendances = data.slice(1).map(row => {
+      const record = {};
+      headers.forEach((header, index) => {
+        record[header.toLowerCase().replace(/\s+/g, '')] = row[index];
+      });
+      return record;
+    });
+
+    return ContentService
+          .createTextOutput(JSON.stringify({ attendances: attendances }))
+          .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    console.error("Error en getAttendances: " + error.toString() + " Stack: " + error.stack);
+    return ContentService
+          .createTextOutput(JSON.stringify({ error: "Error interno del servidor: " + error.toString() }))
+          .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Modificar doGet para manejar diferentes acciones
 function doGet(e) {
+  if (e.parameter.action === 'getAttendances') {
+    return getAttendances();
+  }
+  return getDrivers(); // Función original para obtener conductores
+}
+
+function getDrivers() {
   const sheetName = "Conductores"; 
   const nameColumn = 1;
   const startRow = 2; 
@@ -23,9 +67,9 @@ function doGet(e) {
           .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
-    console.error("Error en doGet: " + error.toString() + " Stack: " + error.stack);
+    console.error("Error en getDrivers: " + error.toString() + " Stack: " + error.stack);
     return ContentService
-          .createTextOutput(JSON.stringify({ error: "Error interno del servidor en doGet: " + error.toString() }))
+          .createTextOutput(JSON.stringify({ error: "Error interno del servidor: " + error.toString() }))
           .setMimeType(ContentService.MimeType.JSON);
   }
 }

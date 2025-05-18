@@ -3,62 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Asistencia de Conductores</title>
+    <title>Sistema de Asistencia</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-    <!-- Leaflet JavaScript -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <style>
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            gap: 20px;
+        }
+
+        .menu-button {
+            width: 280px;
+            padding: 20px;
+            font-size: 1.2em;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .menu-button:hover {
+            background-color: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .menu-button:active {
+            transform: translateY(0);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Registro de Asistencia</h1>
-        
-        <div class="map-container">
-            <button type="button" id="toggleMapButton" class="map-toggle-button">Mostrar Mapa</button>
-            <div id="map"></div>
+        <h1>Sistema de Control de Asistencia</h1>
+        <div class="menu-container">
+            <a href="registro.html" class="menu-button">Registro de Asistencia</a>
+            <a href="lista.html" class="menu-button">Lista de Asistencias</a>
         </div>
-
-        <form id="attendanceForm">
-            <div class="form-group">
-                <label for="driverSelect">Selecciona Conductor:</label>
-                <select id="driverSelect" name="driver" required>
-                    <option value="">Cargando conductores...</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="vehicleTypeSelect">Tipo de Vehículo:</label>
-                <select id="vehicleTypeSelect" name="vehicleType" required>
-                    <option value="">-- Selecciona tipo --</option>
-                    <option value="Auto">Auto</option>
-                    <option value="Moto">Moto</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="timestamp">Fecha y Hora:</label>
-                <input type="text" id="timestamp" name="timestamp" readonly>
-            </div>
-
-            <!-- Nuevo: Sección de captura de selfie -->
-            <div class="form-group camera-section">
-                <label>Selfie de Verificación:</label>
-                <div class="camera-container">
-                    <video id="cameraPreview" autoplay playsinline></video>
-                    <canvas id="photoCanvas" style="display: none;"></canvas>
-                    <img id="photoPreview" style="display: none;" alt="Selfie Preview">
-                </div>
-                <div class="camera-buttons">
-                    <button type="button" id="startCamera" class="camera-button">Iniciar Cámara</button>
-                    <button type="button" id="takePhoto" class="camera-button" disabled>Tomar Foto</button>
-                    <button type="button" id="retakePhoto" class="camera-button" style="display: none;">Nueva Foto</button>
-                </div>
-                <p id="cameraStatus" class="camera-status"></p>
-            </div>
-
-            <button type="submit" class="submit-button">Registrar Asistencia</button>
-        </form>
-        <p id="message"></p>
     </div>
-    <script src="script.js"></script>
 </body>
 </html> 
