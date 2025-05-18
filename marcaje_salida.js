@@ -6,10 +6,145 @@ document.addEventListener('DOMContentLoaded', () => {
     const exitList = document.getElementById('exitList');
     const driverFilter = document.getElementById('driverFilter');
     const vehicleFilter = document.getElementById('vehicleFilter');
+    const exitModal = document.getElementById('exitModal');
+    const sectorSelect = document.getElementById('sector');
 
     // Variables para almacenar datos
     let attendanceData = [];
     let drivers = new Set();
+    let currentExitData = null;
+
+    // Función para cargar sectores
+    async function loadSectors() {
+        try {
+            const response = await fetch(`${googleAppScriptUrl}?action=getSectors`);
+            if (!response.ok) throw new Error('Error en la respuesta del servidor');
+            
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+            sectorSelect.innerHTML = '<option value="">Seleccione un sector</option>';
+            data.sectors.forEach(sector => {
+                const option = document.createElement('option');
+                option.value = sector;
+                option.textContent = sector;
+                sectorSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error al cargar sectores:', error);
+        }
+    }
+
+    // Función para validar campos del modal
+    function validateExitFields() {
+        let isValid = true;
+        const bolsos = document.getElementById('bolsos');
+        const carros = document.getElementById('carros');
+        const sector = document.getElementById('sector');
+        const ssl = document.getElementById('ssl');
+
+        // Validar Bolsos
+        if (bolsos.value === '' || bolsos.value < 0 || bolsos.value > 6) {
+            document.getElementById('bolsos-error').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('bolsos-error').style.display = 'none';
+        }
+
+        // Validar Carros
+        if (carros.value === '' || carros.value < 1 || carros.value > 6) {
+            document.getElementById('carros-error').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('carros-error').style.display = 'none';
+        }
+
+        // Validar Sector
+        if (!sector.value) {
+            document.getElementById('sector-error').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('sector-error').style.display = 'none';
+        }
+
+        // Validar SSL
+        if (ssl.value === '' || ssl.value < 0 || ssl.value > 3) {
+            document.getElementById('ssl-error').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('ssl-error').style.display = 'none';
+        }
+
+        return isValid;
+    }
+
+    // Función para mostrar el modal de salida
+    function showExitModal(timestamp, button) {
+        currentExitData = { timestamp, button };
+        document.getElementById('bolsos').value = '';
+        document.getElementById('carros').value = '';
+        document.getElementById('sector').value = '';
+        document.getElementById('ssl').value = '';
+        exitModal.style.display = 'block';
+    }
+
+    // Función para cerrar el modal
+    window.closeExitModal = function() {
+        exitModal.style.display = 'none';
+        if (currentExitData && currentExitData.button) {
+            currentExitData.button.disabled = false;
+            currentExitData.button.textContent = 'Marcar Salida';
+        }
+        currentExitData = null;
+    }
+
+    // Función para confirmar la salida
+    window.confirmExit = async function() {
+        if (!validateExitFields() || !currentExitData) return;
+
+        const { timestamp, button } = currentExitData;
+        const bolsos = document.getElementById('bolsos').value;
+        const carros = document.getElementById('carros').value;
+        const sector = document.getElementById('sector').value;
+        const ssl = document.getElementById('ssl').value;
+
+        try {
+            button.disabled = true;
+            button.textContent = 'Procesando...';
+
+            const formData = new URLSearchParams();
+            formData.append('action', 'markExit');
+            formData.append('timestamp', timestamp);
+            formData.append('bolsos', bolsos);
+            formData.append('carros', carros);
+            formData.append('sector', sector);
+            formData.append('ssl', ssl);
+
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                button.closest('tr').remove();
+                exitModal.style.display = 'none';
+                // Actualizar datos
+                fetchAttendanceData();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            console.error('Error al marcar salida:', error);
+            button.textContent = 'Error';
+            button.disabled = false;
+            alert('Error al marcar la salida: ' + error.message);
+        }
+    }
 
     // Función para calcular tiempo de espera
     function calculateWaitingTime(timestamp) {
@@ -24,41 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return `${hours}h ${minutes}m`;
         }
         return `${minutes}m`;
-    }
-
-    // Función para marcar la salida
-    async function markExit(timestamp, button) {
-        try {
-            button.disabled = true;
-            button.textContent = 'Procesando...';
-
-            const formData = new URLSearchParams();
-            formData.append('action', 'markExit');
-            formData.append('timestamp', timestamp);
-
-            const response = await fetch(googleAppScriptUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                button.closest('tr').remove();
-                // Actualizar datos
-                fetchAttendanceData();
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (error) {
-            console.error('Error al marcar salida:', error);
-            button.textContent = 'Error';
-            button.disabled = false;
-            alert('Error al marcar la salida: ' + error.message);
-        }
     }
 
     // Función para cargar los datos de asistencia
@@ -144,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>
                     <button 
                         class="mark-exit-button"
-                        onclick="markExit('${timeString}', this)"
+                        onclick="showExitModal('${timeString}', this)"
                     >
                         Marcar Salida
                     </button>
@@ -158,12 +258,13 @@ document.addEventListener('DOMContentLoaded', () => {
     driverFilter.addEventListener('change', filterAndDisplayData);
     vehicleFilter.addEventListener('change', filterAndDisplayData);
 
-    // Exponer función markExit globalmente
-    window.markExit = markExit;
+    // Exponer funciones globalmente
+    window.showExitModal = showExitModal;
+
+    // Cargar sectores y datos iniciales
+    loadSectors();
+    fetchAttendanceData();
 
     // Actualizar datos cada minuto
     setInterval(fetchAttendanceData, 60000);
-
-    // Cargar datos iniciales
-    fetchAttendanceData();
 }); 

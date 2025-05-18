@@ -83,9 +83,11 @@ function doGet(e) {
     if (e.parameter.action === 'getAttendances') {
       console.log("Acción solicitada: getAttendances");
       return getAttendances();
+    } else if (e.parameter.action === 'getSectors') {
+      console.log("Acción solicitada: getSectors");
+      return getSectors();
     }
     
-    console.log("Acción por defecto: getDrivers");
     return getDrivers();
     
   } catch (error) {
@@ -205,6 +207,44 @@ function savePhoto(base64Data, fileName) {
   }
 }
 
+// Función para obtener sectores
+function getSectors() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Parametros");
+    
+    if (!sheet) {
+      throw new Error("Hoja 'Parametros' no encontrada");
+    }
+
+    // Buscar la columna "Sector"
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const sectorIndex = headers.findIndex(header => header === "Sector");
+
+    if (sectorIndex === -1) {
+      throw new Error("Columna 'Sector' no encontrada en la hoja Parametros");
+    }
+
+    // Obtener todos los sectores (excluyendo el encabezado)
+    const sectors = sheet.getRange(2, sectorIndex + 1, sheet.getLastRow() - 1, 1)
+                        .getValues()
+                        .flat()
+                        .filter(sector => sector !== "");
+
+    return ContentService
+          .createTextOutput(JSON.stringify({ sectors: sectors }))
+          .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    console.error("Error en getSectors:", error.toString(), "Stack:", error.stack);
+    return ContentService
+          .createTextOutput(JSON.stringify({ 
+            error: "Error al obtener sectores: " + error.toString()
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 // Función para marcar la salida de un conductor
 function markExit(e) {
   console.log("Iniciando markExit");
@@ -213,6 +253,25 @@ function markExit(e) {
   try {
     if (!e.parameter.timestamp) {
       throw new Error("No se proporcionó el timestamp del registro");
+    }
+
+    // Validar campos adicionales
+    const bolsos = parseInt(e.parameter.bolsos);
+    const carros = parseInt(e.parameter.carros);
+    const sector = e.parameter.sector;
+    const ssl = parseInt(e.parameter.ssl);
+
+    if (isNaN(bolsos) || bolsos < 0 || bolsos > 6) {
+      throw new Error("Valor de Bolsos inválido");
+    }
+    if (isNaN(carros) || carros < 1 || carros > 6) {
+      throw new Error("Valor de Carros inválido");
+    }
+    if (!sector) {
+      throw new Error("Sector no especificado");
+    }
+    if (isNaN(ssl) || ssl < 0 || ssl > 3) {
+      throw new Error("Valor de SSL inválido");
     }
 
     const searchTimestamp = e.parameter.timestamp;
@@ -233,8 +292,13 @@ function markExit(e) {
     const timestampIndex = headers.findIndex(header => header === "Fecha Hora Ingreso");
     const exitIndex = headers.findIndex(header => header === "Fecha Hora Salida");
     const checkboxIndex = headers.findIndex(header => header === "Marcar salida");
+    const bolsosIndex = headers.findIndex(header => header === "Bolsos");
+    const carrosIndex = headers.findIndex(header => header === "Carros");
+    const sectorIndex = headers.findIndex(header => header === "Sector");
+    const sslIndex = headers.findIndex(header => header === "SSL");
 
-    if (timestampIndex === -1 || exitIndex === -1 || checkboxIndex === -1) {
+    if (timestampIndex === -1 || exitIndex === -1 || checkboxIndex === -1 || 
+        bolsosIndex === -1 || carrosIndex === -1 || sectorIndex === -1 || sslIndex === -1) {
       throw new Error("No se encontraron todas las columnas necesarias");
     }
 
@@ -260,10 +324,15 @@ function markExit(e) {
       throw new Error("No se encontró el registro especificado");
     }
 
-    // Marcar la salida y el checkbox
+    // Marcar la salida y actualizar campos adicionales
     const now = new Date();
-    sheet.getRange(rowIndex + 1, exitIndex + 1).setValue(now);
-    sheet.getRange(rowIndex + 1, checkboxIndex + 1).setValue(true);
+    const rowNumber = rowIndex + 1;
+    sheet.getRange(rowNumber, exitIndex + 1).setValue(now);
+    sheet.getRange(rowNumber, checkboxIndex + 1).setValue(true);
+    sheet.getRange(rowNumber, bolsosIndex + 1).setValue(bolsos);
+    sheet.getRange(rowNumber, carrosIndex + 1).setValue(carros);
+    sheet.getRange(rowNumber, sectorIndex + 1).setValue(sector);
+    sheet.getRange(rowNumber, sslIndex + 1).setValue(ssl);
 
     return ContentService
           .createTextOutput(JSON.stringify({ 
