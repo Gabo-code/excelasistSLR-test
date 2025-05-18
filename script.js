@@ -243,7 +243,18 @@ document.addEventListener('DOMContentLoaded', () => {
         photoPreview.style.display = 'none';
         retakePhotoButton.style.display = 'none';
         startCameraButton.style.display = 'inline-block';
+        takePhotoButton.style.display = 'inline-block';
+        takePhotoButton.disabled = true;
         cameraStatus.textContent = '';
+        
+        // Asegurarse de detener cualquier stream existente
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+
+        // Iniciar la cámara automáticamente
+        startCamera();
     }
 
     // Event Listeners
