@@ -372,4 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cargar datos iniciales
     loadLocationParams();
     fetchDrivers();
+    updateTimestamp();
+    
+    // Actualizar el timestamp cada minuto
+    setInterval(updateTimestamp, 60000);
 }); 
