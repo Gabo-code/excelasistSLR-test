@@ -232,9 +232,8 @@ function markExit(e) {
     // Encontrar índices de columnas necesarias
     const timestampIndex = headers.findIndex(header => header === "Fecha Hora Ingreso");
     const exitIndex = headers.findIndex(header => header === "Fecha Hora Salida");
-    const markExitIndex = headers.findIndex(header => header === "Marcar salida");
 
-    if (timestampIndex === -1 || exitIndex === -1 || markExitIndex === -1) {
+    if (timestampIndex === -1 || exitIndex === -1) {
       throw new Error("No se encontraron todas las columnas necesarias");
     }
 
@@ -250,7 +249,6 @@ function markExit(e) {
     // Marcar la salida
     const now = new Date();
     sheet.getRange(rowIndex + 1, exitIndex + 1).setValue(now);
-    sheet.getRange(rowIndex + 1, markExitIndex + 1).check();
 
     return ContentService
           .createTextOutput(JSON.stringify({ 
@@ -279,7 +277,7 @@ function doPost(e) {
     return markExit(e);
   }
   
-  // Mantener el código existente para el registro de asistencia
+  // Si no es markExit, entonces es registro de asistencia
   try {
     // Validar parámetros recibidos
     if (!e || !e.parameter) {
