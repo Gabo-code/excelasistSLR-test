@@ -205,11 +205,82 @@ function savePhoto(base64Data, fileName) {
   }
 }
 
-// Función doPost actualizada para manejar fotos
-function doPost(e) {
+// Función para marcar la salida de un conductor
+function markExit(e) {
+  console.log("Iniciando markExit");
+  const sheetName = "AsistenciasRegistradas";
+  
   try {
-    console.log("Iniciando doPost");
+    if (!e.parameter.timestamp) {
+      throw new Error("No se proporcionó el timestamp del registro");
+    }
+
+    const timestamp = e.parameter.timestamp;
+    console.log("Buscando registro con timestamp:", timestamp);
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+
+    if (!sheet) {
+      throw new Error("Hoja no encontrada: " + sheetName);
+    }
+
+    // Obtener datos y encabezados
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
     
+    // Encontrar índices de columnas necesarias
+    const timestampIndex = headers.findIndex(header => header === "Fecha Hora Ingreso");
+    const exitIndex = headers.findIndex(header => header === "Fecha Hora Salida");
+    const markExitIndex = headers.findIndex(header => header === "Marcar salida");
+
+    if (timestampIndex === -1 || exitIndex === -1 || markExitIndex === -1) {
+      throw new Error("No se encontraron todas las columnas necesarias");
+    }
+
+    // Buscar la fila del registro
+    const rowIndex = data.findIndex((row, index) => 
+      index > 0 && row[timestampIndex] && row[timestampIndex].toString() === timestamp
+    );
+
+    if (rowIndex === -1) {
+      throw new Error("No se encontró el registro especificado");
+    }
+
+    // Marcar la salida
+    const now = new Date();
+    sheet.getRange(rowIndex + 1, exitIndex + 1).setValue(now);
+    sheet.getRange(rowIndex + 1, markExitIndex + 1).check();
+
+    return ContentService
+          .createTextOutput(JSON.stringify({ 
+            status: "success", 
+            message: "Salida registrada correctamente",
+            exitTime: now.toLocaleString()
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    console.error("Error en markExit:", error.toString(), "Stack:", error.stack);
+    return ContentService
+          .createTextOutput(JSON.stringify({ 
+            status: "error", 
+            message: error.toString()
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Modificar doPost para manejar el marcaje de salida
+function doPost(e) {
+  console.log("Iniciando doPost con parámetros:", e.parameter);
+  
+  if (e.parameter.action === 'markExit') {
+    return markExit(e);
+  }
+  
+  // Mantener el código existente para el registro de asistencia
+  try {
     // Validar parámetros recibidos
     if (!e || !e.parameter) {
       throw new Error("No se recibieron parámetros en la solicitud");
