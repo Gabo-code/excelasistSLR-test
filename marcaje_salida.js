@@ -126,22 +126,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        exitList.innerHTML = filteredData.map(record => `
+        exitList.innerHTML = filteredData.map(record => {
+            const date = new Date(record.timestamp);
+            const timeString = date.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            
+            return `
             <tr>
                 <td>${record.driver}</td>
                 <td>${record.vehicleType}</td>
-                <td>${new Date(record.timestamp).toLocaleTimeString('es-ES')}</td>
+                <td>${timeString}</td>
                 <td class="waiting-time">${calculateWaitingTime(record.timestamp)}</td>
                 <td>
                     <button 
                         class="mark-exit-button"
-                        onclick="markExit('${record.timestamp}', this)"
+                        onclick="markExit('${timeString}', this)"
                     >
                         Marcar Salida
                     </button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
 
     // Event listeners para filtros

@@ -215,8 +215,8 @@ function markExit(e) {
       throw new Error("No se proporcionó el timestamp del registro");
     }
 
-    const timestamp = e.parameter.timestamp;
-    console.log("Buscando registro con timestamp:", timestamp);
+    const searchTimestamp = e.parameter.timestamp;
+    console.log("Buscando registro con timestamp:", searchTimestamp);
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(sheetName);
@@ -237,12 +237,25 @@ function markExit(e) {
       throw new Error("No se encontraron todas las columnas necesarias");
     }
 
+    // Función para formatear fecha a string comparable
+    function formatDateToString(date) {
+      const d = new Date(date);
+      const hours = d.getHours().toString().padStart(2, '0');
+      const minutes = d.getMinutes().toString().padStart(2, '0');
+      const seconds = d.getSeconds().toString().padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
     // Buscar la fila del registro
-    const rowIndex = data.findIndex((row, index) => 
-      index > 0 && row[timestampIndex] && row[timestampIndex].toString() === timestamp
-    );
+    const rowIndex = data.findIndex((row, index) => {
+      if (index === 0 || !row[timestampIndex]) return false;
+      const rowTime = formatDateToString(row[timestampIndex]);
+      return rowTime === searchTimestamp;
+    });
 
     if (rowIndex === -1) {
+      console.error("No se encontró el registro. Timestamp buscado:", searchTimestamp);
+      console.error("Timestamps disponibles:", data.slice(1).map(row => formatDateToString(row[timestampIndex])));
       throw new Error("No se encontró el registro especificado");
     }
 
