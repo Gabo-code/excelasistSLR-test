@@ -33,13 +33,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (data.error) throw new Error(data.error);
 
-            sectorSelect.innerHTML = '<option value="">Seleccione un sector</option>';
+            sectorSelect.innerHTML = '';
             data.sectors.forEach(sector => {
                 const option = document.createElement('option');
                 option.value = sector;
                 option.textContent = sector;
                 sectorSelect.appendChild(option);
             });
+
+            // Agregar manejo de eventos táctiles para mejorar la selección múltiple
+            let touchTimeout;
+            sectorSelect.addEventListener('touchstart', function(e) {
+                touchTimeout = setTimeout(() => {
+                    // Prevenir el zoom en dispositivos móviles
+                    e.preventDefault();
+                }, 500);
+            });
+
+            sectorSelect.addEventListener('touchend', function(e) {
+                clearTimeout(touchTimeout);
+            });
+
         } catch (error) {
             console.error('Error al cargar sectores:', error);
             alert('Error al cargar sectores. Por favor, recargue la página.');
@@ -105,8 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('carros-error').style.display = 'none';
         }
 
-        // Validar Sector
-        if (!sector.value) {
+        // Validar Sector (múltiple)
+        const selectedSectors = Array.from(sector.selectedOptions).map(option => option.value);
+        if (selectedSectors.length === 0) {
             document.getElementById('sector-error').style.display = 'block';
             isValid = false;
         } else {
@@ -151,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { timestamp, button } = currentExitData;
         const bolsos = document.getElementById('bolsos').value;
         const carros = document.getElementById('carros').value;
-        const sector = document.getElementById('sector').value;
+        const selectedSectors = Array.from(document.getElementById('sector').selectedOptions).map(option => option.value);
         const ssl = document.getElementById('ssl').value;
 
         try {
@@ -163,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('timestamp', timestamp);
             formData.append('bolsos', bolsos);
             formData.append('carros', carros);
-            formData.append('sector', sector);
+            formData.append('sector', selectedSectors.join(', ')); // Enviar sectores separados por coma
             formData.append('ssl', ssl);
 
             const result = await makeRequest(googleAppScriptUrl, 'POST', formData);
