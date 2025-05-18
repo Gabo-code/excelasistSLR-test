@@ -232,8 +232,9 @@ function markExit(e) {
     // Encontrar índices de columnas necesarias
     const timestampIndex = headers.findIndex(header => header === "Fecha Hora Ingreso");
     const exitIndex = headers.findIndex(header => header === "Fecha Hora Salida");
+    const checkboxIndex = headers.findIndex(header => header === "Marcar salida");
 
-    if (timestampIndex === -1 || exitIndex === -1) {
+    if (timestampIndex === -1 || exitIndex === -1 || checkboxIndex === -1) {
       throw new Error("No se encontraron todas las columnas necesarias");
     }
 
@@ -259,9 +260,10 @@ function markExit(e) {
       throw new Error("No se encontró el registro especificado");
     }
 
-    // Marcar la salida
+    // Marcar la salida y el checkbox
     const now = new Date();
     sheet.getRange(rowIndex + 1, exitIndex + 1).setValue(now);
+    sheet.getRange(rowIndex + 1, checkboxIndex + 1).setValue(true);
 
     return ContentService
           .createTextOutput(JSON.stringify({ 
