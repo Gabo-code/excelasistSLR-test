@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conductores Por Salir</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .list-container {
+            margin: 20px 0;
+        }
+
+        .pending-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .pending-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .pending-item:hover {
+            transform: translateX(5px);
+        }
+
+        .position-number {
+            width: 30px;
+            height: 30px;
+            background-color: #2196F3;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        .driver-info {
+            flex-grow: 1;
+        }
+
+        .driver-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .driver-details {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .filter-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+            min-width: 80px;
+        }
+
+        .filter-group select {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .waiting-time {
+            color: #e65100;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conductores Por Salir</h1>
+        
+        <div class="filter-section">
+            <div class="filter-group">
+                <label for="vehicleFilter">Vehículo:</label>
+                <select id="vehicleFilter">
+                    <option value="">Todos</option>
+                    <option value="Auto">Auto</option>
+                    <option value="Moto">Moto</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="list-container">
+            <ul id="pendingList" class="pending-list">
+                <!-- La lista se llenará dinámicamente -->
+            </ul>
+        </div>
+
+        <a href="index.html" class="back-button">Volver al Menú Principal</a>
+    </div>
+    <script src="por_salir.js"></script>
+</body>
+</html> 
