@@ -141,6 +141,8 @@ function doGet(e) {
         return ContentService
               .createTextOutput(JSON.stringify(result))
               .setMimeType(ContentService.MimeType.JSON);
+      case 'getDrivers':
+        return getDrivers();
       default:
         throw new Error("Acción no válida");
     }
