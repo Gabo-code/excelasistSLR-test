@@ -234,4 +234,24 @@ button[type="submit"]:hover {
 .leaflet-popup-content {
     font-size: 14px;
     padding: 8px;
+}
+
+.back-button {
+    display: block;
+    width: fit-content;
+    padding: 10px 20px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    margin-bottom: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #5a6268;
 } 
