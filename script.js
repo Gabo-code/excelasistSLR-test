@@ -231,10 +231,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const driverResponse = await fetch(`${googleAppScriptUrl}?action=getDriverByPID&pid=${pid}`);
             const driverData = await driverResponse.json();
             
-            if (driverData && driverData.name) {
+            if (driverData && driverData.driver && driverData.driver.name) {
                 // Si el conductor está asignado, mostrar solo ese conductor
-                driverSelect.innerHTML = `<option value="${driverData.name}" selected>${driverData.name}</option>`;
-                vehicleTypeSelect.value = driverData.vehicle;
+                driverSelect.innerHTML = `<option value="${driverData.driver.name}" selected>${driverData.driver.name}</option>`;
+                vehicleTypeSelect.value = driverData.driver.vehicle;
                 vehicleTypeSelect.disabled = true;
                 return;
             }
