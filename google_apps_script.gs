@@ -80,22 +80,32 @@ function doGet(e) {
   console.log("Iniciando doGet con parámetros:", e.parameter);
   
   try {
-    if (e.parameter.action === 'getAttendances') {
-      console.log("Acción solicitada: getAttendances");
-      return getAttendances();
-    } else if (e.parameter.action === 'getSectors') {
-      console.log("Acción solicitada: getSectors");
-      return getSectors();
-    } else if (e.parameter.action === 'getLocationParams') {
-      console.log("Acción solicitada: getLocationParams");
-      const params = getLocationParams();
-      return ContentService
-            .createTextOutput(JSON.stringify(params))
-            .setMimeType(ContentService.MimeType.JSON);
+    switch(e.parameter.action) {
+      case 'getAttendances':
+        return getAttendances();
+      case 'getSectors':
+        return getSectors();
+      case 'getLocationParams':
+        const params = getLocationParams();
+        return ContentService
+              .createTextOutput(JSON.stringify(params))
+              .setMimeType(ContentService.MimeType.JSON);
+      case 'generatePID':
+        return ContentService
+              .createTextOutput(JSON.stringify({ pid: generatePID() }))
+              .setMimeType(ContentService.MimeType.JSON);
+      case 'getAvailableDrivers':
+        return ContentService
+              .createTextOutput(JSON.stringify(getAvailableDrivers()))
+              .setMimeType(ContentService.MimeType.JSON);
+      case 'getDriverByPID':
+        const driverInfo = getDriverByPID(e.parameter.pid);
+        return ContentService
+              .createTextOutput(JSON.stringify({ driver: driverInfo }))
+              .setMimeType(ContentService.MimeType.JSON);
+      default:
+        return getDrivers();
     }
-    
-    return getDrivers();
-    
   } catch (error) {
     console.error("Error en doGet:", error.toString(), "Stack:", error.stack);
     return ContentService
@@ -402,6 +412,26 @@ function doPost(e) {
   if (e.parameter.action === 'markExit') {
     return markExit(e);
   }
+
+  if (e.parameter.action === 'assignDriverPID') {
+    try {
+      const result = assignDriverPID(
+        e.parameter.driverName,
+        e.parameter.pid,
+        e.parameter.vehicleType
+      );
+      return ContentService
+            .createTextOutput(JSON.stringify(result))
+            .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService
+            .createTextOutput(JSON.stringify({ 
+              status: "error", 
+              message: error.toString() 
+            }))
+            .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
   
   // Si no es markExit, entonces es registro de asistencia
   try {
@@ -537,4 +567,112 @@ function doPost(e) {
           }))
           .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+// Función para generar un PID único
+function generatePID() {
+  return Utilities.getUuid();
+}
+
+// Función para obtener conductores disponibles (sin PID asignado)
+function getAvailableDrivers() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Conductores");
+  
+  if (!sheet) {
+    throw new Error("Hoja 'Conductores' no encontrada");
+  }
+
+  // Obtener encabezados
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const nombreIndex = headers.findIndex(header => header === "Nombre");
+  const pidIndex = headers.findIndex(header => header === "pid");
+  const vehiculoIndex = headers.findIndex(header => header === "Vehículo");
+
+  if (nombreIndex === -1) {
+    throw new Error("Columna 'Nombre' no encontrada");
+  }
+
+  // Obtener todos los datos
+  const data = sheet.getDataRange().getValues();
+  const drivers = data.slice(1) // Excluir encabezados
+    .filter(row => {
+      const hasPid = pidIndex !== -1 && row[pidIndex];
+      return !hasPid && row[nombreIndex]; // Solo conductores sin PID
+    })
+    .map(row => ({
+      name: row[nombreIndex],
+      vehicle: vehiculoIndex !== -1 ? row[vehiculoIndex] || '' : ''
+    }));
+
+  return { drivers };
+}
+
+// Función para verificar y obtener información del conductor por PID
+function getDriverByPID(pid) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Conductores");
+  
+  if (!sheet) {
+    throw new Error("Hoja 'Conductores' no encontrada");
+  }
+
+  // Obtener encabezados
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const nombreIndex = headers.findIndex(header => header === "Nombre");
+  const pidIndex = headers.findIndex(header => header === "pid");
+  const vehiculoIndex = headers.findIndex(header => header === "Vehículo");
+
+  if (pidIndex === -1) {
+    throw new Error("Columna 'pid' no encontrada");
+  }
+
+  // Buscar el conductor con el PID
+  const data = sheet.getDataRange().getValues();
+  const driverRow = data.slice(1).find(row => row[pidIndex] === pid);
+
+  if (driverRow) {
+    return {
+      name: driverRow[nombreIndex],
+      vehicle: vehiculoIndex !== -1 ? driverRow[vehiculoIndex] || '' : ''
+    };
+  }
+
+  return null;
+}
+
+// Función para asignar PID y vehículo a un conductor
+function assignDriverPID(driverName, pid, vehicleType) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Conductores");
+  
+  if (!sheet) {
+    throw new Error("Hoja 'Conductores' no encontrada");
+  }
+
+  // Obtener encabezados
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const nombreIndex = headers.findIndex(header => header === "Nombre");
+  const pidIndex = headers.findIndex(header => header === "pid");
+  const vehiculoIndex = headers.findIndex(header => header === "Vehículo");
+
+  if (pidIndex === -1 || nombreIndex === -1 || vehiculoIndex === -1) {
+    throw new Error("No se encontraron todas las columnas necesarias");
+  }
+
+  // Buscar el conductor
+  const data = sheet.getDataRange().getValues();
+  const rowIndex = data.findIndex((row, index) => 
+    index > 0 && row[nombreIndex] === driverName && !row[pidIndex]
+  );
+
+  if (rowIndex === -1) {
+    throw new Error("Conductor no encontrado o ya tiene PID asignado");
+  }
+
+  // Actualizar PID y vehículo
+  sheet.getRange(rowIndex + 1, pidIndex + 1).setValue(pid);
+  sheet.getRange(rowIndex + 1, vehiculoIndex + 1).setValue(vehicleType);
+
+  return { status: "success", message: "PID y vehículo asignados correctamente" };
 }

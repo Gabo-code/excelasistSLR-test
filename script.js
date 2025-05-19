@@ -33,6 +33,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const retakePhotoButton = document.getElementById('retakePhoto');
     const cameraStatus = document.getElementById('cameraStatus');
 
+    // Función para obtener o generar PID
+    async function getOrGeneratePID() {
+        let pid = localStorage.getItem('driverPID');
+        if (!pid) {
+            try {
+                const response = await fetch(`${googleAppScriptUrl}?action=generatePID`);
+                const data = await response.json();
+                pid = data.pid;
+                localStorage.setItem('driverPID', pid);
+            } catch (error) {
+                console.error('Error al generar PID:', error);
+                throw error;
+            }
+        }
+        return pid;
+    }
+
     // Función para cargar los parámetros de ubicación
     async function loadLocationParams() {
         try {
@@ -208,22 +225,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Función para cargar conductores
     async function fetchDrivers() {
         try {
-            const response = await fetch(googleAppScriptUrl);
-            if (!response.ok) throw new Error('Error en la respuesta del servidor');
+            const pid = await getOrGeneratePID();
             
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
+            // Primero, verificar si el usuario ya tiene un conductor asignado
+            const driverResponse = await fetch(`${googleAppScriptUrl}?action=getDriverByPID&pid=${pid}`);
+            const driverData = await driverResponse.json();
+            
+            if (driverData.driver) {
+                // Si el conductor está asignado, mostrar solo ese conductor
+                driverSelect.innerHTML = `<option value="${driverData.driver.name}" selected>${driverData.driver.name}</option>`;
+                vehicleTypeSelect.value = driverData.driver.vehicle;
+                vehicleTypeSelect.disabled = true;
+                return;
+            }
 
-            const drivers = data.drivers;
+            // Si no tiene conductor asignado, mostrar conductores disponibles
+            const availableResponse = await fetch(`${googleAppScriptUrl}?action=getAvailableDrivers`);
+            const availableData = await availableResponse.json();
+            
             driverSelect.innerHTML = '<option value="">-- Selecciona un conductor --</option>';
-            drivers.forEach(driver => {
-                if (driver) {
-                    const option = document.createElement('option');
-                    option.value = driver;
-                    option.textContent = driver;
-                    driverSelect.appendChild(option);
-                }
+            availableData.drivers.forEach(driver => {
+                const option = document.createElement('option');
+                option.value = driver.name;
+                option.textContent = driver.name;
+                driverSelect.appendChild(option);
             });
+            
+            vehicleTypeSelect.disabled = false;
         } catch (error) {
             console.error('Error al cargar conductores:', error);
             messageElement.textContent = 'Error al cargar la lista de conductores';
@@ -335,10 +363,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateUserLocation(position);
             }
 
+            const pid = await getOrGeneratePID();
+            const driverName = driverSelect.value;
+            const vehicleType = vehicleTypeSelect.value;
+
+            // Si es la primera vez que el conductor marca asistencia, asignar PID
+            const driverResponse = await fetch(`${googleAppScriptUrl}?action=getDriverByPID&pid=${pid}`);
+            const driverData = await driverResponse.json();
+            
+            if (!driverData.driver) {
+                // Asignar PID al conductor
+                const assignResponse = await fetch(googleAppScriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'assignDriverPID',
+                        driverName,
+                        pid,
+                        vehicleType
+                    })
+                });
+                
+                const assignResult = await assignResponse.json();
+                if (assignResult.status !== 'success') {
+                    throw new Error(assignResult.message);
+                }
+            }
+
             // Preparar datos del formulario incluyendo la foto
             const formData = new URLSearchParams();
-            formData.append('driver', driverSelect.value);
-            formData.append('vehicleType', vehicleTypeSelect.value);
+            formData.append('driver', driverName);
+            formData.append('vehicleType', vehicleType);
             formData.append('timestamp', timestampInput.value);
             formData.append('photo', photoPreview.src);
 
@@ -360,7 +417,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageElement.className = 'success';
                 attendanceForm.reset();
                 updateTimestamp();
-                retakePhoto(); // Resetear la cámara
+                retakePhoto();
+                
+                // Recargar la lista de conductores
+                await fetchDrivers();
             } else {
                 throw new Error(result.message || 'Error al registrar la asistencia');
             }
