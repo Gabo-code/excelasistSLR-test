@@ -160,6 +160,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     map.invalidateSize(true);
                     map.setView([TARGET_LAT, TARGET_LON], 17);
                 }
+                
+                // Iniciar seguimiento de ubicación cuando se muestra el mapa
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.watchPosition(
+                        updateUserLocation,
+                        (error) => {
+                            console.error('Error al obtener ubicación:', error);
+                            messageElement.textContent = 'Error al obtener tu ubicación. Por favor, permite el acceso a la ubicación.';
+                            messageElement.className = 'error';
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 5000,
+                            maximumAge: 0
+                        }
+                    );
+                } else {
+                    messageElement.textContent = 'Tu navegador no soporta geolocalización';
+                    messageElement.className = 'error';
+                }
             }, 300); // Aumentado el retraso para asegurar que la transición CSS se complete
         } else {
             // Ocultar el mapa
