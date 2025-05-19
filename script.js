@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Función para actualizar el timestamp
     function updateTimestamp() {
         const now = new Date();
-        const month = now.getMonth() + 1; // getMonth() devuelve 0-11
+        const month = now.getMonth() + 1;
         const day = now.getDate();
         const year = now.getFullYear();
         const hours = String(now.getHours()).padStart(2, '0');
@@ -371,8 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Preparar los datos del formulario
             const formData = new FormData();
-            formData.append('action', 'submitAttendance');
-            formData.append('driverName', driverName);
+            formData.append('driver', driverName);
             formData.append('vehicleType', vehicleType);
             formData.append('timestamp', timestamp);
             formData.append('photo', photoDataUrl);

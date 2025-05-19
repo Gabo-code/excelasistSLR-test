@@ -587,7 +587,12 @@ function doPost(e) {
       sheet.getRange(nextRow, columnMap["Nombre"]).setValue(driver);
     }
     if (columnMap["Fecha Hora Ingreso"]) {
-      sheet.getRange(nextRow, columnMap["Fecha Hora Ingreso"]).setValue(timestamp);
+      // El timestamp viene en formato M/D/YYYY H:MM:SS
+      const [datePart, timePart] = timestamp.split(' ');
+      const [month, day, year] = datePart.split('/');
+      const [hours, minutes, seconds] = timePart.split(':');
+      const date = new Date(year, month - 1, day, hours, minutes, seconds);
+      sheet.getRange(nextRow, columnMap["Fecha Hora Ingreso"]).setValue(date);
     }
     if (columnMap["Vehículo"]) {
       sheet.getRange(nextRow, columnMap["Vehículo"]).setValue(vehicleType);
