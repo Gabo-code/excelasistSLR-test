@@ -209,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }).addTo(map);
         }
 
-        userMarker.bindPopup('Tu ubicación actual').openPopup();
         map.setView([latitude, longitude], map.getZoom());
     }
 
