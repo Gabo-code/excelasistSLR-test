@@ -141,7 +141,16 @@ function doGet(e) {
         return ContentService
               .createTextOutput(JSON.stringify(result))
               .setMimeType(ContentService.MimeType.JSON);
+<<<<<<< HEAD
       case 'getDrivers':
+=======
+      case 'checkPendingExits':
+        const pendingExits = checkPendingExits(e.parameter.driverName);
+        return ContentService
+              .createTextOutput(JSON.stringify(pendingExits))
+              .setMimeType(ContentService.MimeType.JSON);
+      default:
+>>>>>>> 5f53f32 (feat: verificar salidas pendientes antes de permitir registro de asistencia)
         return getDrivers();
       default:
         throw new Error("Acción no válida");
@@ -713,4 +722,45 @@ function assignDriverPID(driverName, pid, vehicleType) {
   sheet.getRange(rowIndex + 1, vehiculoIndex + 1).setValue(vehicleType);
 
   return { status: "success", message: "PID y vehículo asignados correctamente" };
+}
+
+// Función para verificar si un conductor tiene salidas pendientes
+function checkPendingExits(driverName) {
+  console.log("Verificando salidas pendientes para:", driverName);
+  const sheetName = "AsistenciasRegistradas";
+  
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      throw new Error("Hoja no encontrada: " + sheetName);
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    // Encontrar índices de columnas necesarias
+    const nombreIndex = headers.findIndex(header => header === "Nombre");
+    const salidaIndex = headers.findIndex(header => header === "Fecha Hora Salida");
+    
+    if (nombreIndex === -1 || salidaIndex === -1) {
+      throw new Error("Columnas requeridas no encontradas");
+    }
+
+    // Buscar registros del conductor sin fecha de salida
+    const pendingExits = data.slice(1).filter(row => 
+      row[nombreIndex] === driverName && 
+      (!row[salidaIndex] || row[salidaIndex].toString().trim() === "")
+    );
+
+    return {
+      hasPendingExit: pendingExits.length > 0,
+      count: pendingExits.length
+    };
+
+  } catch (error) {
+    console.error("Error en checkPendingExits:", error.toString());
+    throw error;
+  }
 }

@@ -347,39 +347,66 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        messageElement.textContent = 'Verificando ubicación...';
-        messageElement.className = '';
+        const driverName = driverSelect.value;
+        const vehicleType = vehicleTypeSelect.value;
+        const timestamp = timestampInput.value;
 
+        // Verificar salidas pendientes antes de permitir el registro
         try {
+<<<<<<< HEAD
             const driverName = driverSelect.value;
             
             // Verificar salidas pendientes
             const hasPendingExit = await checkPendingExits(driverName);
             if (hasPendingExit) {
+=======
+            const pendingResponse = await fetch(`${googleAppScriptUrl}?action=checkPendingExits&driverName=${encodeURIComponent(driverName)}`);
+            const pendingData = await pendingResponse.json();
+
+            if (pendingData.hasPendingExit) {
+>>>>>>> 5f53f32 (feat: verificar salidas pendientes antes de permitir registro de asistencia)
                 messageElement.textContent = 'Tienes una salida pendiente';
                 messageElement.className = 'error';
                 return;
             }
 
+<<<<<<< HEAD
             const position = await new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(resolve, reject, {
                     enableHighAccuracy: true,
                     timeout: 10000,
                     maximumAge: 0
                 });
+=======
+            // Si no hay salidas pendientes, proceder con el registro
+            const pid = await getOrGeneratePID();
+
+            // Obtener la foto del canvas
+            const photoDataUrl = photoCanvas.toDataURL('image/jpeg');
+
+            // Preparar los datos del formulario
+            const formData = new FormData();
+            formData.append('action', 'submitAttendance');
+            formData.append('driverName', driverName);
+            formData.append('vehicleType', vehicleType);
+            formData.append('timestamp', timestamp);
+            formData.append('photo', photoDataUrl);
+            formData.append('pid', pid);
+
+            // Enviar los datos
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: formData
+>>>>>>> 5f53f32 (feat: verificar salidas pendientes antes de permitir registro de asistencia)
             });
 
-            const distance = calculateDistance(
-                position.coords.latitude,
-                position.coords.longitude,
-                TARGET_LAT,
-                TARGET_LON
-            );
+            const data = await response.json();
 
-            if (distance > MAX_DISTANCE_METERS) {
-                throw new Error(`Ubicación fuera del rango permitido (${Math.round(distance)}m)`);
+            if (data.error) {
+                throw new Error(data.error);
             }
 
+<<<<<<< HEAD
             // Actualizar mapa si está visible
             if (mapElement.classList.contains('visible')) {
                 updateUserLocation(position);
@@ -388,11 +415,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const pid = await getOrGeneratePID();
             const vehicleType = vehicleTypeSelect.value;
 
+=======
+>>>>>>> 5f53f32 (feat: verificar salidas pendientes antes de permitir registro de asistencia)
             // Si es la primera vez que el conductor marca asistencia, asignar PID
             const driverResponse = await fetch(`${googleAppScriptUrl}?action=getDriverByPID&pid=${pid}`);
             const driverData = await driverResponse.json();
             
+<<<<<<< HEAD
             if (!driverData || !driverData.name) {
+=======
+            if (!driverData || !driverData.driver) {
+>>>>>>> 5f53f32 (feat: verificar salidas pendientes antes de permitir registro de asistencia)
                 // Asignar PID al conductor
                 const assignResponse = await fetch(googleAppScriptUrl, {
                     method: 'POST',
@@ -406,48 +439,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         vehicleType
                     })
                 });
-                
-                const assignResult = await assignResponse.json();
-                if (assignResult.status !== 'success') {
-                    throw new Error(assignResult.message);
+
+                const assignData = await assignResponse.json();
+                if (assignData.error) {
+                    throw new Error(assignData.error);
                 }
             }
 
-            // Preparar datos del formulario incluyendo la foto
-            const formData = new URLSearchParams();
-            formData.append('driver', driverName);
-            formData.append('vehicleType', vehicleType);
-            formData.append('timestamp', timestampInput.value);
-            formData.append('photo', photoPreview.src);
+            messageElement.textContent = 'Asistencia registrada correctamente';
+            messageElement.className = 'success';
 
-            messageElement.textContent = 'Subiendo foto y registrando asistencia...';
+            // Limpiar el formulario
+            photoPreview.style.display = 'none';
+            photoCanvas.style.display = 'none';
+            cameraPreview.style.display = 'block';
+            photoTaken = false;
+            
+            // Actualizar la lista de conductores
+            await fetchDrivers();
 
-            // Enviar datos
-            const response = await fetch(googleAppScriptUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                messageElement.textContent = 'Asistencia registrada correctamente';
-                messageElement.className = 'success';
-                attendanceForm.reset();
-                updateTimestamp();
-                retakePhoto();
-                
-                // Recargar la lista de conductores
-                await fetchDrivers();
-            } else {
-                throw new Error(result.message || 'Error al registrar la asistencia');
-            }
         } catch (error) {
-            console.error('Error:', error);
-            messageElement.textContent = `Error: ${error.message}`;
+            console.error('Error al registrar asistencia:', error);
+            messageElement.textContent = 'Error al registrar asistencia: ' + error.message;
             messageElement.className = 'error';
         }
     });
