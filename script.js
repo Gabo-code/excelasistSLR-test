@@ -353,31 +353,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Verificar salidas pendientes antes de permitir el registro
         try {
-<<<<<<< HEAD
-            const driverName = driverSelect.value;
-            
             // Verificar salidas pendientes
-            const hasPendingExit = await checkPendingExits(driverName);
-            if (hasPendingExit) {
-=======
             const pendingResponse = await fetch(`${googleAppScriptUrl}?action=checkPendingExits&driverName=${encodeURIComponent(driverName)}`);
             const pendingData = await pendingResponse.json();
 
             if (pendingData.hasPendingExit) {
->>>>>>> 5f53f32 (feat: verificar salidas pendientes antes de permitir registro de asistencia)
                 messageElement.textContent = 'Tienes una salida pendiente';
                 messageElement.className = 'error';
                 return;
             }
 
-<<<<<<< HEAD
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                });
-=======
             // Si no hay salidas pendientes, proceder con el registro
             const pid = await getOrGeneratePID();
 
@@ -397,7 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
                 body: formData
->>>>>>> 5f53f32 (feat: verificar salidas pendientes antes de permitir registro de asistencia)
             });
 
             const data = await response.json();
@@ -406,26 +390,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error);
             }
 
-<<<<<<< HEAD
-            // Actualizar mapa si está visible
-            if (mapElement.classList.contains('visible')) {
-                updateUserLocation(position);
-            }
-
-            const pid = await getOrGeneratePID();
-            const vehicleType = vehicleTypeSelect.value;
-
-=======
->>>>>>> 5f53f32 (feat: verificar salidas pendientes antes de permitir registro de asistencia)
             // Si es la primera vez que el conductor marca asistencia, asignar PID
             const driverResponse = await fetch(`${googleAppScriptUrl}?action=getDriverByPID&pid=${pid}`);
             const driverData = await driverResponse.json();
             
-<<<<<<< HEAD
-            if (!driverData || !driverData.name) {
-=======
             if (!driverData || !driverData.driver) {
->>>>>>> 5f53f32 (feat: verificar salidas pendientes antes de permitir registro de asistencia)
                 // Asignar PID al conductor
                 const assignResponse = await fetch(googleAppScriptUrl, {
                     method: 'POST',

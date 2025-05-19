@@ -99,16 +99,19 @@ function checkPendingExits(driverName) {
       throw new Error("Columnas requeridas no encontradas");
     }
 
-    // Buscar registros del conductor sin hora de salida
+    // Buscar registros del conductor sin fecha de salida
     const pendingExits = data.slice(1).filter(row => 
-      row[nombreIndex] === driverName && !row[salidaIndex]
+      row[nombreIndex] === driverName && 
+      (!row[salidaIndex] || row[salidaIndex].toString().trim() === "")
     );
 
     return {
-      hasPendingExit: pendingExits.length > 0
+      hasPendingExit: pendingExits.length > 0,
+      count: pendingExits.length
     };
+
   } catch (error) {
-    console.error("Error en checkPendingExits:", error);
+    console.error("Error en checkPendingExits:", error.toString());
     throw error;
   }
 }
