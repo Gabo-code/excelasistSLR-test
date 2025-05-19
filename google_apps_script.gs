@@ -75,6 +75,44 @@ function getAttendances() {
   }
 }
 
+// Función para verificar si un conductor tiene salidas pendientes
+function checkPendingExits(driverName) {
+  console.log("Verificando salidas pendientes para:", driverName);
+  const sheetName = "AsistenciasRegistradas";
+  
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) {
+      throw new Error("Hoja no encontrada: " + sheetName);
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    // Encontrar índices de columnas necesarias
+    const nombreIndex = headers.findIndex(header => header === "Nombre");
+    const salidaIndex = headers.findIndex(header => header === "Fecha Hora Salida");
+    
+    if (nombreIndex === -1 || salidaIndex === -1) {
+      throw new Error("Columnas requeridas no encontradas");
+    }
+
+    // Buscar registros del conductor sin hora de salida
+    const pendingExits = data.slice(1).filter(row => 
+      row[nombreIndex] === driverName && !row[salidaIndex]
+    );
+
+    return {
+      hasPendingExit: pendingExits.length > 0
+    };
+  } catch (error) {
+    console.error("Error en checkPendingExits:", error);
+    throw error;
+  }
+}
+
 // Modificar doGet para manejar diferentes acciones
 function doGet(e) {
   console.log("Iniciando doGet con parámetros:", e.parameter);
@@ -91,27 +129,25 @@ function doGet(e) {
               .createTextOutput(JSON.stringify(params))
               .setMimeType(ContentService.MimeType.JSON);
       case 'generatePID':
-        return ContentService
-              .createTextOutput(JSON.stringify({ pid: generatePID() }))
-              .setMimeType(ContentService.MimeType.JSON);
+        return generatePID();
       case 'getAvailableDrivers':
         return ContentService
               .createTextOutput(JSON.stringify(getAvailableDrivers()))
               .setMimeType(ContentService.MimeType.JSON);
       case 'getDriverByPID':
-        const driverInfo = getDriverByPID(e.parameter.pid);
+        return getDriverByPID(e.parameter.pid);
+      case 'checkPendingExits':
+        const result = checkPendingExits(e.parameter.driverName);
         return ContentService
-              .createTextOutput(JSON.stringify({ driver: driverInfo }))
+              .createTextOutput(JSON.stringify(result))
               .setMimeType(ContentService.MimeType.JSON);
       default:
-        return getDrivers();
+        throw new Error("Acción no válida");
     }
   } catch (error) {
-    console.error("Error en doGet:", error.toString(), "Stack:", error.stack);
+    console.error("Error en doGet:", error);
     return ContentService
-          .createTextOutput(JSON.stringify({ 
-            error: "Error procesando la solicitud: " + error.toString() 
-          }))
+          .createTextOutput(JSON.stringify({ error: error.toString() }))
           .setMimeType(ContentService.MimeType.JSON);
   }
 }

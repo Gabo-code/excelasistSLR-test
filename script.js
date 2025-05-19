@@ -323,6 +323,18 @@ document.addEventListener('DOMContentLoaded', () => {
         startCamera();
     }
 
+    // Función para verificar salidas pendientes
+    async function checkPendingExits(driverName) {
+        try {
+            const response = await fetch(`${googleAppScriptUrl}?action=checkPendingExits&driverName=${encodeURIComponent(driverName)}`);
+            const data = await response.json();
+            return data.hasPendingExit;
+        } catch (error) {
+            console.error('Error al verificar salidas pendientes:', error);
+            throw error;
+        }
+    }
+
     // Event Listeners
     toggleMapButton.addEventListener('click', toggleMap);
 
@@ -339,6 +351,16 @@ document.addEventListener('DOMContentLoaded', () => {
         messageElement.className = '';
 
         try {
+            const driverName = driverSelect.value;
+            
+            // Verificar salidas pendientes
+            const hasPendingExit = await checkPendingExits(driverName);
+            if (hasPendingExit) {
+                messageElement.textContent = 'Tienes una salida pendiente';
+                messageElement.className = 'error';
+                return;
+            }
+
             const position = await new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(resolve, reject, {
                     enableHighAccuracy: true,
@@ -364,7 +386,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const pid = await getOrGeneratePID();
-            const driverName = driverSelect.value;
             const vehicleType = vehicleTypeSelect.value;
 
             // Si es la primera vez que el conductor marca asistencia, asignar PID
