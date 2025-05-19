@@ -3,6 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzgd3dsxH6LX_RIhRiE5Porrh9IhDllN-NZs90ejXPBHJZwj_oBZU_jHEXCEEh5bhdvsg/exec';
 
     // Referencias a elementos del DOM
+    const passwordModal = document.getElementById('passwordModal');
+    const mainContent = document.getElementById('mainContent');
+    const passwordInput = document.getElementById('password');
+    const passwordError = document.getElementById('password-error');
     const exitList = document.getElementById('exitList');
     const driverFilter = document.getElementById('driverFilter');
     const vehicleFilter = document.getElementById('vehicleFilter');
@@ -13,6 +17,28 @@ document.addEventListener('DOMContentLoaded', () => {
     let attendanceData = [];
     let drivers = new Set();
     let currentExitData = null;
+
+    // Función para verificar la contraseña
+    window.verifyPassword = function() {
+        const password = passwordInput.value;
+        if (password === 'slr2025#') {
+            passwordModal.style.display = 'none';
+            mainContent.style.display = 'block';
+            // Iniciar la carga de datos después de verificar la contraseña
+            loadSectors();
+            fetchAttendanceData();
+        } else {
+            passwordError.style.display = 'block';
+            passwordInput.value = '';
+        }
+    }
+
+    // Agregar evento para la tecla Enter en el campo de contraseña
+    passwordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            verifyPassword();
+        }
+    });
 
     // Función para cargar sectores
     async function loadSectors() {
