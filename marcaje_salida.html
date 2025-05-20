@@ -179,45 +179,53 @@
         }
 
         .form-group select[multiple] {
-            height: 150px;
+            height: 100px;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 14px;
             -webkit-tap-highlight-color: rgba(0,0,0,0);
             touch-action: manipulation;
         }
 
         .form-group select[multiple] option {
-            padding: 12px 8px;
-            margin: 2px 0;
+            padding: 8px;
+            margin: 1px 0;
             border-radius: 4px;
+            font-size: 14px;
         }
 
-        .form-group select[multiple] option:checked {
+        .selected-sectors {
+            margin-top: 8px;
+            min-height: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .selected-sectors .sector-tag {
             background-color: #2196F3;
             color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-block;
         }
 
         .select-help {
             font-size: 12px;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             font-style: italic;
         }
 
         @media (max-width: 768px) {
             .form-group select[multiple] {
-                height: 200px;
+                height: 150px;
             }
 
             .form-group select[multiple] option {
-                padding: 14px 8px;
-            }
-
-            .select-help {
-                font-size: 14px;
-                margin-bottom: 8px;
+                padding: 10px 8px;
             }
         }
 
@@ -337,16 +345,12 @@
                     <div class="error-message" id="bolsos-error">El valor debe estar entre 0 y 6</div>
                 </div>
                 <div class="form-group">
-                    <label for="carros">Carros (1-6):</label>
-                    <input type="number" id="carros" min="1" max="6" required>
-                    <div class="error-message" id="carros-error">El valor debe estar entre 1 y 6</div>
-                </div>
-                <div class="form-group">
-                    <label for="sector">Sector (puede seleccionar múltiples):</label>
+                    <label for="sector">Sector:</label>
                     <div class="select-help">Mantenga presionado para seleccionar varios sectores</div>
                     <select id="sector" multiple required>
                         <!-- Se llenará dinámicamente -->
                     </select>
+                    <div id="selectedSectorsDisplay" class="selected-sectors"></div>
                     <div class="error-message" id="sector-error">Debe seleccionar al menos un sector</div>
                 </div>
                 <div class="form-group">

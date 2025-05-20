@@ -355,15 +355,11 @@ function markExit(e) {
 
     // Validar campos adicionales
     const bolsos = parseInt(e.parameter.bolsos);
-    const carros = parseInt(e.parameter.carros);
     const sector = e.parameter.sector;
     const ssl = parseInt(e.parameter.ssl);
 
     if (isNaN(bolsos) || bolsos < 0 || bolsos > 6) {
       throw new Error("Valor de Bolsos inválido");
-    }
-    if (isNaN(carros) || carros < 1 || carros > 6) {
-      throw new Error("Valor de Carros inválido");
     }
     if (!sector) {
       throw new Error("Sector no especificado");
@@ -391,12 +387,11 @@ function markExit(e) {
     const exitIndex = headers.findIndex(header => header === "Fecha Hora Salida");
     const checkboxIndex = headers.findIndex(header => header === "Marcar salida");
     const bolsosIndex = headers.findIndex(header => header === "Bolsos");
-    const carrosIndex = headers.findIndex(header => header === "Carros");
     const sectorIndex = headers.findIndex(header => header === "Sector");
     const sslIndex = headers.findIndex(header => header === "SSL");
 
     if (timestampIndex === -1 || exitIndex === -1 || checkboxIndex === -1 || 
-        bolsosIndex === -1 || carrosIndex === -1 || sectorIndex === -1 || sslIndex === -1) {
+        bolsosIndex === -1 || sectorIndex === -1 || sslIndex === -1) {
       throw new Error("No se encontraron todas las columnas necesarias");
     }
 
@@ -428,7 +423,6 @@ function markExit(e) {
     sheet.getRange(rowNumber, exitIndex + 1).setValue(now);
     sheet.getRange(rowNumber, checkboxIndex + 1).setValue(true);
     sheet.getRange(rowNumber, bolsosIndex + 1).setValue(bolsos);
-    sheet.getRange(rowNumber, carrosIndex + 1).setValue(carros);
     sheet.getRange(rowNumber, sectorIndex + 1).setValue(sector);
     sheet.getRange(rowNumber, sslIndex + 1).setValue(ssl);
 
