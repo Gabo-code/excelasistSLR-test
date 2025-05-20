@@ -366,6 +366,34 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Verificar ubicación antes de proceder
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                });
+            });
+
+            const distance = calculateDistance(
+                position.coords.latitude,
+                position.coords.longitude,
+                TARGET_LAT,
+                TARGET_LON
+            );
+
+            if (distance > MAX_DISTANCE_METERS) {
+                messageElement.textContent = `Estás fuera del radio permitido. Distancia: ${Math.round(distance)}m (máximo permitido: ${MAX_DISTANCE_METERS}m)`;
+                messageElement.className = 'error';
+                return;
+            }
+        } catch (error) {
+            messageElement.textContent = 'Error al obtener la ubicación. Por favor, asegúrate de tener el GPS activado.';
+            messageElement.className = 'error';
+            return;
+        }
+
         const driverName = driverSelect.value;
         const vehicleType = vehicleTypeSelect.value;
         const timestamp = timestampInput.value;
