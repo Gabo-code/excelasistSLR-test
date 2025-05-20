@@ -116,6 +116,90 @@ function checkPendingExits(driverName) {
   }
 }
 
+// Función para obtener el tiempo de standby
+function getStandbyTime() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Parametros");
+    
+    if (!sheet) {
+      throw new Error("Hoja 'Parametros' no encontrada");
+    }
+
+    // Buscar la columna "Tiempo standby"
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const standbyIndex = headers.findIndex(header => header === "Tiempo standby");
+
+    if (standbyIndex === -1) {
+      throw new Error("Columna 'Tiempo standby' no encontrada");
+    }
+
+    // Obtener el valor de la fila 2
+    const standbyTime = sheet.getRange(2, standbyIndex + 1).getValue();
+    
+    if (!standbyTime || isNaN(standbyTime)) {
+      throw new Error("Valor de tiempo standby inválido");
+    }
+
+    return standbyTime;
+  } catch (error) {
+    console.error("Error al obtener tiempo de standby:", error);
+    throw error;
+  }
+}
+
+// Función para verificar si un conductor puede registrarse
+function checkDriverStandby(driverName) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("AsistenciasRegistradas");
+    
+    if (!sheet) {
+      throw new Error("Hoja 'AsistenciasRegistradas' no encontrada");
+    }
+
+    // Obtener encabezados
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const nombreIndex = headers.findIndex(header => header === "Nombre");
+    const salidaIndex = headers.findIndex(header => header === "Fecha Hora Salida");
+
+    if (nombreIndex === -1 || salidaIndex === -1) {
+      throw new Error("Columnas requeridas no encontradas");
+    }
+
+    // Obtener todos los registros del conductor
+    const data = sheet.getDataRange().getValues();
+    const driverRecords = data.slice(1).filter(row => 
+      row[nombreIndex] === driverName && row[salidaIndex]
+    );
+
+    if (driverRecords.length === 0) {
+      return { canRegister: true };
+    }
+
+    // Obtener el último registro de salida
+    const lastExit = driverRecords.reduce((latest, current) => {
+      const currentDate = new Date(current[salidaIndex]);
+      const latestDate = new Date(latest[salidaIndex]);
+      return currentDate > latestDate ? current : latest;
+    });
+
+    const standbyTime = getStandbyTime();
+    const lastExitTime = new Date(lastExit[salidaIndex]);
+    const now = new Date();
+    const minutesSinceLastExit = Math.floor((now - lastExitTime) / (1000 * 60));
+    const remainingMinutes = standbyTime - minutesSinceLastExit;
+
+    return {
+      canRegister: remainingMinutes <= 0,
+      remainingMinutes: remainingMinutes > 0 ? remainingMinutes : 0
+    };
+  } catch (error) {
+    console.error("Error al verificar standby:", error);
+    throw error;
+  }
+}
+
 // Modificar doGet para manejar diferentes acciones
 function doGet(e) {
   console.log("Iniciando doGet con parámetros:", e.parameter);
@@ -148,6 +232,11 @@ function doGet(e) {
         const result = checkPendingExits(e.parameter.driverName);
         return ContentService
               .createTextOutput(JSON.stringify(result))
+              .setMimeType(ContentService.MimeType.JSON);
+      case 'checkDriverStandby':
+        const standbyResult = checkDriverStandby(e.parameter.driverName);
+        return ContentService
+              .createTextOutput(JSON.stringify(standbyResult))
               .setMimeType(ContentService.MimeType.JSON);
       default:
         return getDrivers();
