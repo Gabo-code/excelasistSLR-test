@@ -360,9 +360,17 @@ document.addEventListener('DOMContentLoaded', () => {
     attendanceForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 
+        // Obtener el botón de submit y deshabilitarlo
+        const submitButton = event.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Procesando...';
+
         if (!photoTaken) {
             messageElement.textContent = 'Por favor, toma una foto antes de registrar la asistencia';
             messageElement.className = 'error';
+            // Reactivar el botón si hay error
+            submitButton.disabled = false;
+            submitButton.textContent = 'Registrar Asistencia';
             return;
         }
 
@@ -378,6 +386,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!standbyData.canRegister) {
                 messageElement.textContent = `Te quedan ${standbyData.remainingMinutes} minutos en standby`;
                 messageElement.className = 'error';
+                // Reactivar el botón si hay error
+                submitButton.disabled = false;
+                submitButton.textContent = 'Registrar Asistencia';
                 return;
             }
 
@@ -388,6 +399,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pendingData.hasPendingExit) {
                 messageElement.textContent = 'Tienes una salida pendiente';
                 messageElement.className = 'error';
+                // Reactivar el botón si hay error
+                submitButton.disabled = false;
+                submitButton.textContent = 'Registrar Asistencia';
                 return;
             }
 
@@ -443,10 +457,19 @@ document.addEventListener('DOMContentLoaded', () => {
             cameraPreview.style.display = 'block';
             startCamera();
 
+            // El botón permanece deshabilitado después de un registro exitoso
+            // Forzar recarga de la página después de 2 segundos
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+
         } catch (error) {
             console.error('Error:', error);
             messageElement.textContent = 'Error al registrar la asistencia: ' + error.message;
             messageElement.className = 'error';
+            // Reactivar el botón si hay error
+            submitButton.disabled = false;
+            submitButton.textContent = 'Registrar Asistencia';
         }
     });
 
