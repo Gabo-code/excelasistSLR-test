@@ -52,19 +52,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (position !== -1) {
                         messageElement.innerHTML = `
                             <div class="alert alert-info">
-                                Estás en el puesto ${position + 1} de la fila
+                                <strong>${driverData.driver.name}</strong>: Estás en el puesto ${position + 1} de la lista de espera
                             </div>`;
                     } else {
                         messageElement.innerHTML = `
                             <div class="alert alert-warning">
-                                No tienes registros pendientes por salir
+                                No estás en la lista de espera
                             </div>`;
                     }
                 } else {
-                    messageElement.innerHTML = '';
+                    messageElement.innerHTML = `
+                        <div class="alert alert-warning">
+                            No estás en la lista de espera
+                        </div>`;
                 }
             } else {
-                messageElement.innerHTML = '';
+                messageElement.innerHTML = `
+                    <div class="alert alert-warning">
+                        No estás en la lista de espera
+                    </div>`;
             }
 
             filterAndDisplayData();
@@ -73,6 +79,16 @@ document.addEventListener('DOMContentLoaded', () => {
             pendingList.innerHTML = `<li class="no-results">Error al cargar los datos: ${error.message}</li>`;
             messageElement.innerHTML = '';
         }
+    }
+
+    // Función para formatear la hora
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
     }
 
     // Función para filtrar y mostrar datos
@@ -97,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="driver-info">
                     <div class="driver-name">${record.driver}</div>
                     <div class="driver-details">
-                        ${record.vehicleType}
+                        ${record.vehicleType} - Ingreso: ${formatTime(record.timestamp)}
                     </div>
                 </div>
             </li>
