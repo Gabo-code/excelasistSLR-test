@@ -38,8 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const driverData = await driverResponse.json();
                 
                 if (driverData.driver) {
-                    // Buscar la posición del conductor actual
-                    const position = attendanceData.findIndex(record => 
+                    // Buscar la posición del conductor actual en los registros de hoy
+                    const today = new Date().toLocaleDateString('es-ES');
+                    const todayRecords = attendanceData.filter(record => {
+                        const recordDate = new Date(record.timestamp).toLocaleDateString('es-ES');
+                        return recordDate === today;
+                    });
+                    
+                    const position = todayRecords.findIndex(record => 
                         record.driver === driverData.driver.name
                     );
                     
@@ -72,10 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Función para filtrar y mostrar datos
     function filterAndDisplayData() {
         const selectedVehicle = vehicleFilter.value;
+        const today = new Date().toLocaleDateString('es-ES');
 
-        const filteredData = attendanceData.filter(record => 
-            !selectedVehicle || record.vehicleType === selectedVehicle
-        );
+        const filteredData = attendanceData.filter(record => {
+            const recordDate = new Date(record.timestamp).toLocaleDateString('es-ES');
+            return recordDate === today && 
+                   (!selectedVehicle || record.vehicleType === selectedVehicle);
+        });
 
         if (!filteredData.length) {
             pendingList.innerHTML = '<li class="no-results">No hay conductores pendientes por salir</li>';
