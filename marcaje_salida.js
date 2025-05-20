@@ -241,13 +241,9 @@ async function fetchAttendanceData() {
     try {
         const data = await makeRequest(`${googleAppScriptUrl}?action=getAttendances`);
 
-        // Filtrar solo registros de hoy sin hora de salida
-        const today = new Date().toLocaleDateString('es-ES');
+        // Filtrar solo registros sin hora de salida
         attendanceData = data.attendances
-            .filter(record => {
-                const recordDate = new Date(record.timestamp).toLocaleDateString('es-ES');
-                return recordDate === today && !record.exitTime;
-            })
+            .filter(record => !record.exitTime)
             .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
         // Actualizar lista de conductores para el filtro
@@ -291,11 +287,14 @@ function filterAndDisplayData() {
     
     const selectedDriver = driverFilter.value;
     const selectedVehicle = vehicleFilter.value;
+    const today = new Date().toLocaleDateString('es-ES');
 
-    const filteredData = attendanceData.filter(record => 
-        (!selectedDriver || record.driver === selectedDriver) &&
-        (!selectedVehicle || record.vehicleType === selectedVehicle)
-    );
+    const filteredData = attendanceData.filter(record => {
+        const recordDate = new Date(record.timestamp).toLocaleDateString('es-ES');
+        return recordDate === today && 
+               (!selectedDriver || record.driver === selectedDriver) &&
+               (!selectedVehicle || record.vehicleType === selectedVehicle);
+    });
 
     if (!filteredData.length) {
         exitList.innerHTML = '<tr><td colspan="3">No hay conductores pendientes por marcar salida</td></tr>';
