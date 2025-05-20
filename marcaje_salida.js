@@ -54,6 +54,123 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Función para cargar sectores
+    async function loadSectors() {
+        try {
+            const response = await fetch(`${googleAppScriptUrl}?action=getSectors`, {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                redirect: 'follow'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+            sectorSelect.innerHTML = '';
+            data.sectors.forEach(sector => {
+                const option = document.createElement('option');
+                option.value = sector;
+                option.textContent = sector;
+                sectorSelect.appendChild(option);
+            });
+
+            // Agregar manejo de eventos táctiles para mejorar la selección múltiple
+            let touchTimeout;
+            sectorSelect.addEventListener('touchstart', function(e) {
+                touchTimeout = setTimeout(() => {
+                    // Prevenir el zoom en dispositivos móviles
+                    e.preventDefault();
+                }, 500);
+            });
+
+            sectorSelect.addEventListener('touchend', function(e) {
+                clearTimeout(touchTimeout);
+                updateSelectedSectorsDisplay();
+            });
+
+        } catch (error) {
+            console.error('Error al cargar sectores:', error);
+            alert('Error al cargar sectores. Por favor, recargue la página.');
+        }
+    }
+
+    // Función para hacer peticiones al servidor
+    async function makeRequest(url, method = 'GET', data = null) {
+        const options = {
+            method: method,
+            mode: 'cors',
+            redirect: 'follow',
+            headers: {
+                'Accept': 'application/json'
+            }
+        };
+
+        if (method === 'POST' && data) {
+            options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            options.body = data;
+        }
+
+        try {
+            const response = await fetch(url, options);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error en la petición:', error);
+            throw new Error(`Error de conexión: ${error.message}. Por favor, inténtelo de nuevo.`);
+        }
+    }
+
+    // Función para validar campos del modal
+    function validateExitFields() {
+        let isValid = true;
+        const bolsos = document.getElementById('bolsos');
+        const sector = document.getElementById('sector');
+        const ssl = document.getElementById('ssl');
+
+        // Validar Bolsos
+        if (bolsos.value === '' || bolsos.value < 0 || bolsos.value > 6) {
+            document.getElementById('bolsos-error').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('bolsos-error').style.display = 'none';
+        }
+
+        // Validar Sector (múltiple)
+        const selectedSectors = Array.from(sector.selectedOptions).map(option => option.value);
+        if (selectedSectors.length === 0) {
+            document.getElementById('sector-error').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('sector-error').style.display = 'none';
+        }
+
+        // Validar SSL
+        if (ssl.value === '' || ssl.value < 0 || ssl.value > 3) {
+            document.getElementById('ssl-error').style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById('ssl-error').style.display = 'none';
+        }
+
+        return isValid;
+    }
+
     // Función para mostrar el modal de salida
     function showExitModal(timestamp, button) {
         currentExitData = { timestamp, button };
