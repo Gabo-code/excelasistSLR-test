@@ -200,6 +200,36 @@ function checkDriverStandby(driverName) {
   }
 }
 
+// Función para marcar la casilla 'Ausente' en el último registro del conductor
+function marcarAusente(driverName) {
+  const sheetName = "AsistenciasRegistradas";
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    throw new Error("Hoja no encontrada: " + sheetName);
+  }
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const nombreIndex = headers.findIndex(header => header === "Nombre");
+  const ausenteIndex = headers.findIndex(header => header === "Ausente");
+  if (nombreIndex === -1 || ausenteIndex === -1) {
+    throw new Error("No se encontró la columna 'Nombre' o 'Ausente'");
+  }
+  // Buscar el último registro del conductor
+  let lastRow = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][nombreIndex] === driverName) {
+      lastRow = i;
+    }
+  }
+  if (lastRow !== -1) {
+    sheet.getRange(lastRow + 1, ausenteIndex + 1).setValue(true);
+    return { status: "success", message: `Marcado como ausente: ${driverName}` };
+  } else {
+    return { status: "error", message: `No se encontró registro para: ${driverName}` };
+  }
+}
+
 // Modificar doGet para manejar diferentes acciones
 function doGet(e) {
   console.log("Iniciando doGet con parámetros:", e.parameter);
@@ -238,6 +268,10 @@ function doGet(e) {
         return ContentService
               .createTextOutput(JSON.stringify(standbyResult))
               .setMimeType(ContentService.MimeType.JSON);
+      case 'marcarAusente':
+        return ContentService
+          .createTextOutput(JSON.stringify(marcarAusente(e.parameter.driverName)))
+          .setMimeType(ContentService.MimeType.JSON);
       default:
         return getDrivers();
     }

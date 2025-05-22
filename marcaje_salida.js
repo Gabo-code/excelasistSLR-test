@@ -212,10 +212,22 @@ function updateDriverRowStyles() {
     });
 }
 
-// Función para incrementar el contador de ausentes cuando alguien sale
+// Función para marcar ausente en Google Sheet
+async function marcarAusenteEnSheet(driverName) {
+    try {
+        await fetch(`${googleAppScriptUrl}?action=marcarAusente&driverName=${encodeURIComponent(driverName)}`);
+    } catch (e) {
+        console.error('Error al marcar ausente en Google Sheet:', e);
+    }
+}
+
+// Modificar la función para incrementar el contador y marcar en sheet si llega a 10
 function incrementAbsentCounters() {
     Object.keys(absentDrivers).forEach(driver => {
         absentDrivers[driver].count++;
+        if (absentDrivers[driver].count === 10) {
+            marcarAusenteEnSheet(driver);
+        }
     });
     updateDriverRowStyles();
 }
