@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const vehicleTypeSelect = document.getElementById('vehicleTypeSelect');
 
     // URL del Google Apps Script
-    const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzgd3dsxH6LX_RIhRiE5Porrh9IhDllN-NZs90ejXPBHJZwj_oBZU_jHEXCEEh5bhdvsg/exec';
+    const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzPoOlGgJjwGE0o0zNer8kGlVWT0oPtCysOkhR6VUpZCsqCqi6A3DWj6bPfUOS-x6ue/exec';
 
     // Variables del mapa
     let map = null;

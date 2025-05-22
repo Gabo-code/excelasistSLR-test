@@ -285,7 +285,7 @@ function getDrivers() {
 // Función para crear la carpeta de fotos si no existe
 function getOrCreatePhotoFolder() {
   try {
-    const folderName = "Fotos_Asistencia";
+    const folderName = "SELFIES";
     console.log("Buscando carpeta:", folderName);
     
     let folders = DriveApp.getFoldersByName(folderName);
