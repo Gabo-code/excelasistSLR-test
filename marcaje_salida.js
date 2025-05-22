@@ -362,9 +362,8 @@ function filterAndDisplayData() {
         }
         return `
         <tr>
-            <td>${nameHtml}
-                <button class="absent-btn" title="Marcar Ausente" onclick="markAbsent('${record.driver}', ${idx})">Ausente</button>
-            </td>
+            <td>${nameHtml}</td>
+            <td><button class="absent-btn" title="Marcar Ausente" onclick="markAbsent('${record.driver}', ${idx})">Ausente</button></td>
             <td>
                 <button 
                     class="mark-exit-button salida-btn"
