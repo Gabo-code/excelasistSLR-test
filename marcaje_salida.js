@@ -5,6 +5,7 @@ const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzPoOlGgJjwG
 let currentExitData = null;
 let attendanceData = [];
 let drivers = new Set();
+let absentDrivers = {}; // { nombre: { count: 0, index: null } }
 
 // Función para cargar sectores
 async function loadSectors() {
@@ -181,6 +182,44 @@ window.closeExitModal = function() {
     currentExitData = null;
 }
 
+// Función para marcar como ausente
+window.markAbsent = function(driverName, rowIndex) {
+    if (!absentDrivers[driverName]) {
+        absentDrivers[driverName] = { count: 0, index: rowIndex };
+    }
+    // Poner el nombre en rojo y resetear el contador
+    absentDrivers[driverName].count = 0;
+    absentDrivers[driverName].index = rowIndex;
+    updateDriverRowStyles();
+};
+
+// Función para actualizar estilos y contador de ausentes
+function updateDriverRowStyles() {
+    const rows = document.querySelectorAll('#exitList tr');
+    rows.forEach((row, idx) => {
+        const nameCell = row.querySelector('.driver-name-cell');
+        if (!nameCell) return;
+        const driverName = nameCell.getAttribute('data-driver');
+        if (absentDrivers[driverName]) {
+            nameCell.style.color = 'red';
+            let count = absentDrivers[driverName].count;
+            let baseName = nameCell.getAttribute('data-base-name');
+            nameCell.innerHTML = `${baseName} <span style='font-weight:normal'>(<span class='absent-count'>${count}</span>)</span>`;
+        } else {
+            nameCell.style.color = '';
+            nameCell.innerHTML = nameCell.getAttribute('data-base-name');
+        }
+    });
+}
+
+// Función para incrementar el contador de ausentes cuando alguien sale
+function incrementAbsentCounters() {
+    Object.keys(absentDrivers).forEach(driver => {
+        absentDrivers[driver].count++;
+    });
+    updateDriverRowStyles();
+}
+
 // Función para confirmar la salida
 window.confirmExit = async function() {
     if (!validateExitFields() || !currentExitData) return;
@@ -208,6 +247,7 @@ window.confirmExit = async function() {
             await new Promise(resolve => setTimeout(resolve, 1000));
             document.getElementById('exitModal').style.display = 'none';
             button.closest('tr').remove();
+            incrementAbsentCounters(); // Incrementar contador de ausentes
             // Actualizar datos
             fetchAttendanceData();
         } else {
@@ -301,7 +341,7 @@ function filterAndDisplayData() {
         return;
     }
 
-    exitList.innerHTML = filteredData.map(record => {
+    exitList.innerHTML = filteredData.map((record, idx) => {
         const date = new Date(record.timestamp);
         const timeString = date.toLocaleTimeString('es-ES', {
             hour: '2-digit',
@@ -313,20 +353,30 @@ function filterAndDisplayData() {
         // Determinar el emoji según el tipo de vehículo
         const vehicleEmoji = record.vehicleType.toLowerCase().includes('moto') ? '🛵' : '🚗';
         
+        // Nombre base para restaurar
+        const baseName = `${vehicleEmoji} ${record.driver}`;
+        // Si está ausente, mostrar contador
+        let nameHtml = `<span class='driver-name-cell' data-driver="${record.driver}" data-base-name="${baseName}">${baseName}</span>`;
+        if (absentDrivers[record.driver]) {
+            nameHtml = `<span class='driver-name-cell' data-driver="${record.driver}" data-base-name="${baseName}" style='color:red;'>${baseName} <span style='font-weight:normal'>(<span class='absent-count'>${absentDrivers[record.driver].count}</span>)</span></span>`;
+        }
         return `
         <tr>
-            <td>${vehicleEmoji} ${record.driver}</td>
+            <td>${nameHtml}
+                <button class="absent-btn" title="Marcar Ausente" onclick="markAbsent('${record.driver}', ${idx})">Ausente</button>
+            </td>
             <td>
                 <button 
-                    class="mark-exit-button"
+                    class="mark-exit-button salida-btn"
                     onclick="showExitModal('${timeString}', this)"
                 >
-                    Marcar Salida
+                    Salida
                 </button>
             </td>
         </tr>
         `;
     }).join('');
+    updateDriverRowStyles();
 }
 
 // Event listeners cuando el DOM está listo
